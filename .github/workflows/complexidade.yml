@@ -6,7 +6,7 @@ name: Complexidade
 on:
   pull_request:
   push:
-    branches: [main, dev, stage, prod]
+    branches: [main, dev, stage]
 
 permissions:
   contents: read
