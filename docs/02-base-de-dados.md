@@ -117,7 +117,7 @@ As secções do site que não pertencem a nenhum projeto, como o texto de entrad
 | --- | --- | --- | --- |
 | Id | integer | não | Chave primária, `GENERATED ALWAYS AS IDENTITY` |
 | Titulo | varchar(150) | não | Título da secção, mostrado no site e no menu |
-| Slug | varchar(160) | não | Único; gerado a partir do título; serve de âncora no site (`/#sobre-mim`) |
+| Slug | varchar(160) | não | Único; gerado a partir do título ao criar, e não muda depois; serve de âncora no site (`/#sobre-mim`) |
 | Conteudo | text | não | Markdown ([SEG21](03-seguranca.md)) |
 | Ordem | integer | não | Posição da secção na página; o backoffice reordena por arrastar |
 | Publico | boolean | não | Por defeito `false`; um bloco oculto fica guardado mas não aparece no site |
@@ -137,7 +137,7 @@ Os projetos do portfólio (RF06–RF09).
 | --- | --- | --- | --- |
 | Id | integer | não | Chave primária, `GENERATED ALWAYS AS IDENTITY` |
 | Nome | varchar(150) | não | |
-| Slug | varchar(160) | não | Único; gerado a partir do nome, usado no URL público (`/projetos/meu-projeto`) |
+| Slug | varchar(160) | não | Único; gerado a partir do nome ao criar, e não muda depois, para os links partilhados continuarem a funcionar; usado no URL público (`/projetos/meu-projeto`) |
 | Descricao | text | sim | |
 | RepositorioGithub | varchar(200) | sim | Link do repositório, sempre no formato `https://github.com/dono/repositorio` (RF10, [SEG29](03-seguranca.md)); `null` = sem timeline |
 | Publico | boolean | não | Por defeito `false` (RF08) |
