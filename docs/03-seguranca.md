@@ -1,6 +1,6 @@
 # Segurança — Portfólio Pessoal
 
-**Versão:** 0.1 (rascunho) · **Data:** 2026-11-17 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md)
+**Versão:** 0.2 (rascunho) · **Data:** 2026-11-18 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md)
 
 ## Visão geral
 
@@ -64,7 +64,7 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
 - **SEG13 — Fechado por defeito.** Uma `FallbackPolicy` global exige login em todos os endpoints. Os endpoints públicos são abertos um a um, com `[AllowAnonymous]`. Assim, um controller novo em que alguém se esqueça do `[Authorize]` fica protegido, em vez de exposto.
 - **SEG14 — Rotas separadas.** O backoffice fica em `/api/backoffice/...` e o site em `/api/publico/...`, para se poderem aplicar políticas, rate limits e regras de proxy diferentes a cada um.
 - **SEG15 — Utilizadores de projeto só veem o seu projeto (fora da v1).** Se um dia existirem utilizadores ligados a projetos, cada pedido tem de confirmar que o projeto pedido é o do utilizador com sessão. Sem esta verificação, basta trocar o id no URL para ver outro projeto (ataque IDOR).
-- **SEG16 — Projetos não públicos não saem.** Todas as consultas públicas filtram por `Publico = true`, incluindo as notas e as imagens desses projetos.
+- **SEG16 — Projetos não públicos não saem.** Todas as consultas públicas filtram por `Publico = true`, incluindo as imagens e a timeline (commits) desses projetos.
 
 ### Imagens
 
@@ -75,11 +75,20 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
 
 ### Conteúdo
 
-- **SEG21 — Sanitizar o Markdown.** Os blocos e as notas são escritos em Markdown, e o Markdown aceita HTML lá dentro. Sem proteção, um `<script>` num bloco executa no browser de quem visita o site (XSS).
+- **SEG21 — Sanitizar o Markdown.** Os blocos são escritos em Markdown, e o Markdown aceita HTML lá dentro. Sem proteção, um `<script>` num bloco executa no browser de quem visita o site (XSS).
   - O conversor de Markdown corre com o HTML embutido desativado (no Markdig, `DisableHtml()`).
   - O HTML gerado passa ainda por um sanitizador (por exemplo HtmlSanitizer), que só deixa passar etiquetas seguras: parágrafos, títulos, listas, negrito, itálico, código, citações e links.
   - Links com `javascript:` são removidos; os links externos levam `rel="noopener noreferrer"`.
   - A conversão para HTML é feita no servidor, e o frontend mostra o HTML já sanitizado.
+
+### GitHub
+
+- **SEG29 — Timeline do GitHub sem abrir portas.** A timeline são os commits do repositório de cada projeto, lidos pela API (RF11).
+  - **Só links do GitHub.** O link é validado ao gravar, com um formato fixo: `https://github.com/dono/repositorio`. A API só fala com `api.github.com` e monta ela própria o endereço a partir do dono e do repositório. Nunca segue um URL escrito por alguém, por isso não pode ser usada para fazer pedidos a outros servidores (SSRF).
+  - **Os commits são texto, não HTML.** As mensagens e os nomes dos autores vêm de fora e podem conter `<script>`: a API devolve-os como texto simples e os frontends mostram-nos como texto, nunca como HTML nem como Markdown.
+  - **Cache e limites.** Sem token, o GitHub aceita 60 pedidos por hora por IP. A API guarda os commits de cada repositório em cache durante 10 minutos, com tempo limite de 10 segundos por pedido. Se o GitHub falhar, mostra a última versão em cache; se não houver, a timeline aparece como indisponível, sem derrubar a página do projeto.
+  - **Token opcional e só de leitura.** Um token do GitHub (`Github:Token`, em user-secrets ou variável de ambiente, SEG25) sobe o limite para 5000 pedidos por hora. Deve ser um *fine-grained token* só com leitura de conteúdos.
+  - **Repositórios privados.** Com um token com acesso a repositórios privados, a API consegue ler os seus commits, e um projeto público passa a mostrar as mensagens desses commits a toda a gente. Por isso, só se associa a um projeto público um repositório cujas mensagens de commit possam ser públicas.
 
 ### Infraestrutura
 
@@ -123,6 +132,8 @@ Valores iniciais propostos. Ficam na configuração (`appsettings.json`), por is
 | Sessão sem atividade | 30 minutos | SEG12 |
 | Duração máxima da sessão | 8 horas | SEG12 |
 | Tamanho máximo por imagem | 5 MB | SEG18 |
+| Cache dos commits de cada repositório | 10 minutos | SEG29 |
+| Tempo limite de um pedido ao GitHub | 10 segundos | SEG29 |
 | Rate limit geral do site público | 100 pedidos por minuto por IP | — |
 
 ## Decisões

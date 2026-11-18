@@ -7,10 +7,14 @@ public class Projeto : ITemDatas
     public required string Nome { get; set; }
     public required string Slug { get; set; }
     public string? Descricao { get; set; }
+
+    // Link do repositório no GitHub, no formato https://github.com/dono/repositorio (RF10, SEG29).
+    // A timeline do projeto são os commits deste repositório; null = sem timeline.
+    public string? RepositorioGithub { get; set; }
+
     public bool Publico { get; set; }
     public DateTime CriadoEm { get; set; }
     public DateTime AtualizadoEm { get; set; }
 
-    public List<Nota> Notas { get; set; } = [];
     public List<ImagemProjeto> Imagens { get; set; } = [];
 }

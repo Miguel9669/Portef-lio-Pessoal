@@ -87,8 +87,8 @@ flowchart TB
 | Projeto | Contém | Não contém |
 | --- | --- | --- |
 | **Portfolio.Api** | Controllers, configuração da autenticação, rate limit, cabeçalhos de segurança, comandos `criar-admin` e `repor-password` | Regras de negócio, consultas à base de dados |
-| **Portfolio.Core** | Entidades (`Utilizador`, `Projeto`, `Nota`…), enums, DTOs, interfaces (`IPasswordHasher`, `IArmazenamentoImagens`…) e os services | Nada de EF, PostgreSQL ou HTTP |
-| **Portfolio.Infrastructure** | `PublicoDbContext`, `BackofficeDbContext`, configuração das tabelas, migrações, implementações das interfaces (Argon2, disco, Markdown, imagens) | Controllers, regras de negócio |
+| **Portfolio.Core** | Entidades (`Utilizador`, `Projeto`, `BlocoConteudo`…), enums, DTOs, interfaces (`IPasswordHasher`, `IArmazenamentoImagens`…) e os services | Nada de EF, PostgreSQL ou HTTP |
+| **Portfolio.Infrastructure** | `PublicoDbContext`, `BackofficeDbContext`, configuração das tabelas, migrações, implementações das interfaces (Argon2, disco, Markdown, imagens, GitHub) | Controllers, regras de negócio |
 
 ### Módulos
 
@@ -99,7 +99,7 @@ Dentro de cada projeto, o código está organizado por módulo, e cada módulo t
 | Autenticação | `AutenticacaoService`, `DoisFatoresService` | RF01–RF03, SEG04–SEG12 |
 | Conteúdo | `BlocoConteudoService` | RF04, RF05 |
 | Projetos | `ProjetoService` | RF06–RF09 |
-| Timeline | `NotaService` | RF10–RF12 |
+| Timeline | `TimelineService` | RF10–RF12, SEG29 |
 | Imagens | `ImagemService` | RF13, SEG17–SEG20 |
 | Site público | `SitePublicoService` (só consultas) | RF05, RF09, RF12 |
 
@@ -123,6 +123,7 @@ Os dois partilham a mesma configuração das tabelas, por isso o modelo só est�
 | `IArmazenamentoImagens` | `ArmazenamentoDiscoLocal` | Gravar, ler e apagar ficheiros; troca-se por blob storage sem mexer nos services |
 | `IProcessadorImagens` | `ProcessadorImageSharp` | Validar o tipo real, reprocessar e remover o EXIF |
 | `IConversorMarkdown` | `ConversorMarkdig` | Markdown para HTML sanitizado |
+| `IGithub` | `GithubApi` | Ler os commits de um repositório na API REST do GitHub (SEG29) |
 | `ITotp` | `TotpOtpNet` | Gerar o segredo, o QR code e validar os códigos |
 
 ## Endpoints
@@ -134,8 +135,7 @@ Os dois partilham a mesma configuração das tabelas, por isso o modelo só est�
 | GET | `/blocos` | Blocos públicos, por ordem, com o HTML já gerado |
 | GET | `/projetos` | Projetos públicos |
 | GET | `/projetos/{slug}` | Um projeto público, com as suas imagens |
-| GET | `/projetos/{slug}/timeline` | Lista da timeline: título e data de cada nota |
-| GET | `/projetos/{slug}/notas/{id}` | Uma nota completa, com HTML e imagens |
+| GET | `/projetos/{slug}/timeline` | Os commits do repositório do projeto: mensagem, autor, data e link para o GitHub |
 | GET | `/imagens/{ficheiro}` | O ficheiro da imagem, só se o projeto for público ([SEG20](03-seguranca.md)) |
 
 ### Backoffice — `/api/backoffice` (login + 2FA obrigatórios, exceto os de autenticação)
@@ -155,9 +155,7 @@ Os dois partilham a mesma configuração das tabelas, por isso o modelo só est�
 | GET, PUT, DELETE | `/projetos/{id}` | Ver, editar e remover |
 | PUT | `/projetos/{id}/publico` | Publicar ou despublicar |
 | POST | `/projetos/{id}/imagens` | Enviar imagens do projeto |
-| GET, POST | `/projetos/{id}/notas` | Timeline completa e criar nota |
-| GET, PUT, DELETE | `/notas/{id}` | Ver, editar e remover uma nota |
-| POST | `/notas/{id}/imagens` | Enviar imagens da nota |
+| GET | `/projetos/{id}/timeline` | Os commits do repositório do projeto (também dos não públicos) |
 | DELETE | `/imagens/{id}` | Remover uma imagem |
 | PUT | `/imagens/ordem` | Gravar a nova ordem das imagens |
 | POST | `/markdown/pre-visualizar` | Devolve o HTML de um texto, para a pré-visualização no editor |
@@ -181,6 +179,35 @@ sequenceDiagram
 
 Se o email ou a password estiverem errados, a resposta é sempre a mesma, com o mesmo tempo ([SEG04, SEG05](03-seguranca.md)). A sessão parcial dura poucos minutos e só dá acesso a `/auth/2fa`.
 
+### Timeline do GitHub
+
+A timeline de um projeto são os commits do repositório indicado em `RepositorioGithub` (RF10–RF12). Não ficam na base de dados.
+
+```mermaid
+sequenceDiagram
+    participant Site as Site / Backoffice
+    participant API
+    participant Cache as Cache (10 min)
+    participant GH as api.github.com
+
+    Site->>API: GET /projetos/{slug}/timeline
+    API->>Cache: commits de dono/repositorio?
+    alt em cache
+        Cache-->>API: commits
+    else não está em cache
+        API->>GH: GET /repos/{dono}/{repositorio}/commits
+        GH-->>API: commits (JSON)
+        API->>Cache: guardar
+    end
+    API-->>Site: mensagem, autor, data e link de cada commit
+```
+
+- **`TimelineService`** (Core) lê o projeto, tira o dono e o repositório do link e pede os commits ao `IGithub`, com cache de 10 minutos por repositório.
+- **`GithubApi`** (Infrastructure) usa um `HttpClient` com o endereço fixo `https://api.github.com`, o cabeçalho `User-Agent` (obrigatório no GitHub), tempo limite de 10 segundos e, se configurado, o token em `Github:Token`.
+- **São mostrados os 100 commits mais recentes** do branch por defeito (uma página da API do GitHub). Cada um leva a primeira linha da mensagem, o autor, a data e o link para o commit no GitHub.
+- **Se o GitHub falhar**, devolve-se a última versão em cache ou, sem ela, a indicação de que a timeline está indisponível; a página do projeto continua a funcionar.
+- As regras de segurança (só links do GitHub, texto e não HTML, repositórios privados) estão em [SEG29](03-seguranca.md).
+
 ## Frontends
 
 Os dois são aplicações separadas, cada uma com o seu build e deploy, mas com a mesma base: React, TypeScript, Tailwind e shadcn/ui. Por isso os componentes e o estilo são os mesmos nos dois.
@@ -196,8 +223,7 @@ Os dois são aplicações separadas, cada uma com o seu build e deploy, mas com 
 | Rota | Mostra |
 | --- | --- |
 | `/` | Os blocos de conteúdo, por ordem, e a lista de projetos públicos |
-| `/projetos/[slug]` | O projeto, as suas imagens e a timeline |
-| `/projetos/[slug]/notas/[id]` | Uma nota completa da timeline |
+| `/projetos/[slug]` | O projeto, as suas imagens e a timeline de commits; cada commit abre no GitHub |
 
 ### Backoffice (Vite)
 
@@ -212,8 +238,7 @@ Aplicação que corre toda no browser (SPA). Os pedidos à API são feitos pelo 
 | `/blocos` | Lista de blocos, arrastar para reordenar, mostrar ou ocultar |
 | `/blocos/:id` | Editor de Markdown com pré-visualização |
 | `/projetos` | Lista de projetos, com o estado público ou não |
-| `/projetos/:id` | Editar o projeto, as suas imagens e a timeline |
-| `/projetos/:id/notas/:notaId` | Editor da nota, com imagens |
+| `/projetos/:id` | Editar o projeto (incluindo o link do GitHub), as suas imagens, e ver a timeline de commits |
 
 ## Desenvolvimento local
 

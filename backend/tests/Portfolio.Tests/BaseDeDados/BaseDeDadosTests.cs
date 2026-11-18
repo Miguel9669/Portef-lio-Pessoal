@@ -21,7 +21,7 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
-    public async Task A_migracao_cria_as_7_tabelas()
+    public async Task A_migracao_cria_as_5_tabelas()
     {
         await using var contexto = bd.NovoBackoffice();
 
@@ -34,7 +34,7 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
             .ToListAsync(Ct);
 
         Assert.Equal(
-            ["BlocoConteudo", "CodigoRecuperacao", "ImagemNota", "ImagemProjeto", "Nota", "Projeto", "Utilizador"],
+            ["BlocoConteudo", "CodigoRecuperacao", "ImagemProjeto", "Projeto", "Utilizador"],
             tabelas);
     }
 
@@ -117,7 +117,7 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Apagar_um_projeto_apaga_as_notas_e_as_imagens()
+    public async Task Apagar_um_projeto_apaga_as_imagens()
     {
         await using (var contexto = bd.NovoBackoffice())
         {
@@ -125,8 +125,8 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
             {
                 Nome = "Com timeline",
                 Slug = "com-timeline",
+                RepositorioGithub = "https://github.com/dono/repositorio",
                 Imagens = [NovaImagemProjeto()],
-                Notas = [new Nota { Titulo = "Início", Texto = "Primeira nota", Imagens = [NovaImagemNota()] }],
             });
             await contexto.SaveChangesAsync(Ct);
         }
@@ -135,10 +135,36 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
         {
             await contexto.Projetos.ExecuteDeleteAsync(Ct);
 
-            Assert.Equal(0, await contexto.Notas.CountAsync(Ct));
-            Assert.Equal(0, await contexto.ImagensNota.CountAsync(Ct));
             Assert.Equal(0, await contexto.ImagensProjeto.CountAsync(Ct));
         }
+    }
+
+    // SEG29: mesmo que a validação da aplicação falhe, só ficam gravados links do GitHub.
+    [Theory]
+    [InlineData("https://evil.example/dono/repositorio")]
+    [InlineData("http://github.com/dono/repositorio")]
+    [InlineData("https://github.com.evil.example/dono/repositorio")]
+    [InlineData("https://github.com/dono/repositorio/../../outra-coisa")]
+    [InlineData("https://github.com/dono")]
+    public async Task A_base_de_dados_so_aceita_links_de_repositorios_do_github(string link)
+    {
+        await using var contexto = bd.NovoBackoffice();
+        contexto.Projetos.Add(new Projeto { Nome = "Teste", Slug = "teste", RepositorioGithub = link });
+
+        var erro = await Assert.ThrowsAsync<DbUpdateException>(() => contexto.SaveChangesAsync(Ct));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, Assert.IsType<PostgresException>(erro.InnerException).SqlState);
+    }
+
+    [Fact]
+    public async Task Um_projeto_pode_nao_ter_repositorio_ou_ter_um_do_github()
+    {
+        await using var contexto = bd.NovoBackoffice();
+        contexto.Projetos.Add(new Projeto { Nome = "Sem repo", Slug = "sem-repo" });
+        contexto.Projetos.Add(new Projeto { Nome = "Com repo", Slug = "com-repo", RepositorioGithub = "https://github.com/Miguel9669/Portef-lio-Pessoal" });
+
+        await contexto.SaveChangesAsync(Ct);
+
+        Assert.Equal(2, await contexto.Projetos.CountAsync(Ct));
     }
 
     [Fact]
@@ -182,14 +208,6 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
     };
 
     private static ImagemProjeto NovaImagemProjeto() => new()
-    {
-        Ficheiro = $"{Guid.NewGuid():N}.webp",
-        NomeOriginal = "foto.jpg",
-        TipoMime = "image/webp",
-        TamanhoBytes = 1234,
-    };
-
-    private static ImagemNota NovaImagemNota() => new()
     {
         Ficheiro = $"{Guid.NewGuid():N}.webp",
         NomeOriginal = "foto.jpg",

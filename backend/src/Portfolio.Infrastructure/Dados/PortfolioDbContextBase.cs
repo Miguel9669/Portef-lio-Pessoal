@@ -10,9 +10,7 @@ public abstract class PortfolioDbContextBase(DbContextOptions options) : DbConte
     public DbSet<CodigoRecuperacao> CodigosRecuperacao => Set<CodigoRecuperacao>();
     public DbSet<BlocoConteudo> BlocosConteudo => Set<BlocoConteudo>();
     public DbSet<Projeto> Projetos => Set<Projeto>();
-    public DbSet<Nota> Notas => Set<Nota>();
     public DbSet<ImagemProjeto> ImagensProjeto => Set<ImagemProjeto>();
-    public DbSet<ImagemNota> ImagensNota => Set<ImagemNota>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

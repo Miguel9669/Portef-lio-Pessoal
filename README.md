@@ -1,6 +1,6 @@
 # Portfólio Pessoal
 
-Portfólio pessoal com um site público e um backoffice para gerir o conteúdo: blocos de texto do site, projetos e a timeline de notas de cada projeto.
+Portfólio pessoal com um site público e um backoffice para gerir o conteúdo: blocos de texto do site, projetos e, em cada projeto, uma timeline com os commits do seu repositório no GitHub.
 
 | Componente | Tecnologia | Pasta |
 | --- | --- | --- |

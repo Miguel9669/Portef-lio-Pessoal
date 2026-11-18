@@ -1,10 +1,10 @@
 # Base de Dados — Portfólio Pessoal
 
-**Versão:** 0.7 (rascunho) · **Data:** 2026-11-17 · **Motor:** PostgreSQL · **Base:** [01-requisitos.md](01-requisitos.md)
+**Versão:** 0.8 (rascunho) · **Data:** 2026-11-18 · **Motor:** PostgreSQL · **Base:** [01-requisitos.md](01-requisitos.md)
 
 ## Visão geral
 
-A base de dados tem 7 tabelas. Um projeto tem notas (a timeline) e imagens próprias, e cada nota tem as suas imagens. À parte ficam o utilizador do backoffice, o único do sistema, com os seus códigos de recuperação do 2FA, e os blocos de conteúdo, as secções do site geridas no backoffice.
+A base de dados tem 5 tabelas. Um projeto tem imagens próprias e, opcionalmente, o link do seu repositório no GitHub; a timeline são os commits desse repositório, lidos do GitHub e não guardados aqui. À parte ficam o utilizador do backoffice, o único do sistema, com os seus códigos de recuperação do 2FA, e os blocos de conteúdo, as secções do site geridas no backoffice.
 
 ```mermaid
 erDiagram
@@ -34,16 +34,8 @@ erDiagram
         text Nome
         text Slug UK
         text Descricao
+        text RepositorioGithub
         boolean Publico
-        timestamptz CriadoEm
-        timestamptz AtualizadoEm
-    }
-
-    NOTA {
-        integer Id PK
-        integer ProjetoId FK
-        text Titulo
-        text Nota
         timestamptz CriadoEm
         timestamptz AtualizadoEm
     }
@@ -51,17 +43,6 @@ erDiagram
     IMAGEM_PROJETO {
         integer Id PK
         integer ProjetoId FK
-        text Ficheiro UK
-        text NomeOriginal
-        text TipoMime
-        bigint TamanhoBytes
-        integer Ordem
-        timestamptz CriadoEm
-    }
-
-    IMAGEM_NOTA {
-        integer Id PK
-        integer NotaId FK
         text Ficheiro UK
         text NomeOriginal
         text TipoMime
@@ -82,9 +63,7 @@ erDiagram
         timestamptz AtualizadoEm
     }
 
-    PROJETO ||--o{ NOTA : "tem (timeline)"
     PROJETO ||--o{ IMAGEM_PROJETO : "tem"
-    NOTA ||--o{ IMAGEM_NOTA : "tem"
 ```
 
 ## Tabelas
@@ -160,37 +139,25 @@ Os projetos do portfólio (RF06–RF09).
 | Nome | varchar(150) | não | |
 | Slug | varchar(160) | não | Único; gerado a partir do nome, usado no URL público (`/projetos/meu-projeto`) |
 | Descricao | text | sim | |
+| RepositorioGithub | varchar(200) | sim | Link do repositório, sempre no formato `https://github.com/dono/repositorio` (RF10, [SEG29](03-seguranca.md)); `null` = sem timeline |
 | Publico | boolean | não | Por defeito `false` (RF08) |
 | CriadoEm | timestamptz | não | |
 | AtualizadoEm | timestamptz | não | Atualizado a cada edição |
 
 Índice em `Publico`, porque o site filtra sempre por ele (RF09).
 
-### Nota
+### Commits (não é uma tabela)
 
-As entradas da timeline de um projeto (RF10–RF12).
+A timeline de um projeto são os commits do seu repositório (RF11, RF12). Não ficam na base de dados: a API lê-os do GitHub quando são pedidos e guarda-os em cache durante alguns minutos (ver [04-componentes.md](04-componentes.md#timeline-do-github)). Assim a timeline está sempre atualizada, sem sincronizações nem dados duplicados.
+
+### ImagemProjeto
+
+As imagens de um projeto. O ficheiro em si fica fora da base de dados (RNF05).
 
 | Campo | Tipo | Nulo | Regras |
 | --- | --- | --- | --- |
 | Id | integer | não | Chave primária, `GENERATED ALWAYS AS IDENTITY` |
 | ProjetoId | integer | não | FK para Projeto, `ON DELETE CASCADE` (RF07) |
-| Titulo | varchar(200) | não | |
-| Nota | text | não | O texto da nota, em Markdown ([SEG21](03-seguranca.md)) |
-| CriadoEm | timestamptz | não | Posição na timeline |
-| AtualizadoEm | timestamptz | não | Atualizado a cada edição |
-
-Índice em `(ProjetoId, CriadoEm)`, que é exatamente a consulta da timeline (RF11).
-
-Em C#, a classe `Nota` não pode ter uma propriedade chamada `Nota` (o compilador não deixa um membro ter o nome da classe). A propriedade fica `Texto` e é mapeada para a coluna `Nota`, ou a coluna passa a chamar-se `Texto`.
-
-### ImagemProjeto e ImagemNota
-
-As imagens de um projeto e as imagens de uma nota. São duas tabelas com a mesma estrutura; muda só a FK. O ficheiro em si fica fora da base de dados (RNF05).
-
-| Campo | Tipo | Nulo | Regras |
-| --- | --- | --- | --- |
-| Id | integer | não | Chave primária, `GENERATED ALWAYS AS IDENTITY` |
-| ProjetoId / NotaId | integer | não | FK para Projeto / Nota, `ON DELETE CASCADE` |
 | Ficheiro | varchar(100) | não | Único; nome gerado (GUID + extensão), nunca o nome enviado |
 | NomeOriginal | varchar(255) | não | Só para mostrar; nunca usado como caminho |
 | TipoMime | varchar(50) | não | Só tipos permitidos (RF13) |
@@ -202,11 +169,14 @@ As imagens de um projeto e as imagens de uma nota. São duas tabelas com a mesma
 
 | Ao apagar | Na base de dados | No armazenamento |
 | --- | --- | --- |
-| Projeto | Apaga em cascata as notas, as imagens das notas e as imagens do projeto | O service apaga os ficheiros de todas essas imagens |
-| Nota | Apaga em cascata as imagens da nota | O service apaga os ficheiros |
+| Projeto | Apaga em cascata as imagens do projeto | O service apaga os ficheiros dessas imagens |
 | Imagem | Apaga a linha | O service apaga o ficheiro |
 
 A cascata só limpa a base de dados. Os ficheiros têm de ser apagados pelo service, depois de a transação ter sucesso; senão ficam ficheiros órfãos no disco.
+
+## Histórico
+
+- **2026-11-18:** as tabelas `Nota` e `ImagemNota` foram retiradas (migração `TimelineGithub`). A timeline passou a ser os commits do GitHub, e o `Projeto` ganhou a coluna `RepositorioGithub`.
 
 ## Convenções
 

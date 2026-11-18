@@ -27,13 +27,14 @@ public class ProjetoConfiguracao : IEntityTypeConfiguration<Projeto>
         e.HasIndex(p => p.Slug).IsUnique();
         e.Property(p => p.Publico).HasDefaultValue(false);
         e.HasIndex(p => p.Publico);
+        e.Property(p => p.RepositorioGithub).HasMaxLength(200);
 
-        // Apagar um projeto apaga as notas e as imagens (RF07).
-        e.HasMany(p => p.Notas)
-            .WithOne()
-            .HasForeignKey(n => n.ProjetoId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // SEG29: só links de repositórios do GitHub, também na base de dados.
+        // Os nomes seguem as regras do GitHub (dono até 39 caracteres, repositório até 100).
+        e.ToTable(t => t.HasCheckConstraint("CK_Projeto_RepositorioGithub",
+            "\"RepositorioGithub\" ~ '^https://github\\.com/[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$'"));
 
+        // Apagar um projeto apaga as imagens (RF07).
         e.HasMany(p => p.Imagens)
             .WithOne()
             .HasForeignKey(i => i.ProjetoId)
@@ -41,37 +42,9 @@ public class ProjetoConfiguracao : IEntityTypeConfiguration<Projeto>
     }
 }
 
-public class NotaConfiguracao : IEntityTypeConfiguration<Nota>
-{
-    public void Configure(EntityTypeBuilder<Nota> e)
-    {
-        e.Property(n => n.Titulo).HasMaxLength(200);
-        e.Property(n => n.Texto).HasColumnName("Nota");
-
-        // A consulta da timeline (RF11).
-        e.HasIndex(n => new { n.ProjetoId, n.CriadoEm });
-
-        e.HasMany(n => n.Imagens)
-            .WithOne()
-            .HasForeignKey(i => i.NotaId)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
 public class ImagemProjetoConfiguracao : IEntityTypeConfiguration<ImagemProjeto>
 {
-    public void Configure(EntityTypeBuilder<ImagemProjeto> e) => ImagemConfiguracao.Configurar(e);
-}
-
-public class ImagemNotaConfiguracao : IEntityTypeConfiguration<ImagemNota>
-{
-    public void Configure(EntityTypeBuilder<ImagemNota> e) => ImagemConfiguracao.Configurar(e);
-}
-
-internal static class ImagemConfiguracao
-{
-    // Mesma estrutura nas duas tabelas de imagens.
-    public static void Configurar<T>(EntityTypeBuilder<T> e) where T : Imagem
+    public void Configure(EntityTypeBuilder<ImagemProjeto> e)
     {
         e.Property(i => i.Ficheiro).HasMaxLength(100);
         e.HasIndex(i => i.Ficheiro).IsUnique();
