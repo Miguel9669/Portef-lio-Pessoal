@@ -21,6 +21,9 @@
     <!-- Conteúdo: Markdown sanitizado (SEG21) -->
     <PackageVersion Include="Markdig" Version="1.5.0" />
     <PackageVersion Include="HtmlSanitizer" Version="10.0.1120" />
+    <!-- Imagens (SEG17, SEG19). MIT. -->
+    <PackageVersion Include="SkiaSharp" Version="4.154.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.154.0" />
     <!-- Testes -->
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.15" />

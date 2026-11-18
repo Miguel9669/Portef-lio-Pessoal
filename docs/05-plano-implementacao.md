@@ -110,15 +110,15 @@ Gestão dos blocos e dos projetos no backoffice (API).
 
 Envio de imagens dos projetos e a timeline com os commits do GitHub.
 
-- [ ] `IGithub` com `HttpClient` para `api.github.com`: `User-Agent`, tempo limite de 10 s, token opcional em `Github:Token` (SEG25, SEG29)
-- [ ] `TimelineService`: os 100 commits mais recentes, com cache de 10 minutos por repositório; se o GitHub falhar, a última versão em cache ou "indisponível" (RF11)
-- [ ] `GET /api/backoffice/projetos/{id}/timeline` (RF12)
-- [ ] `IProcessadorImagens` com ImageSharp: valida os primeiros bytes (JPEG, PNG, WebP), recusa SVG, reprocessa e remove o EXIF (SEG17, SEG19)
-- [ ] Limite de 5 MB por imagem, no Kestrel e no endpoint (SEG18)
-- [ ] `IArmazenamentoImagens` em disco, fora do `wwwroot`, com nomes gerados (GUID) (SEG20, RNF05)
-- [ ] Enviar, remover e reordenar imagens dos projetos (RF13)
-- [ ] Apagar os ficheiros só depois de a transação ter sucesso (regras de remoção do modelo de dados)
-- [ ] Testes: um ficheiro de texto com extensão `.jpg` é recusado; o EXIF é removido; apagar um projeto apaga os ficheiros; a timeline usa a cache e sobrevive a uma falha do GitHub (com um `IGithub` falso)
+- [x] `IGithub` com `HttpClient` para `api.github.com`: `User-Agent`, tempo limite de 10 s, token opcional em `Github:Token` (SEG25, SEG29)
+- [x] `TimelineService`: os 100 commits mais recentes, com cache de 10 minutos por repositório; se o GitHub falhar, a última versão em cache ou "indisponível" (RF11)
+- [x] `GET /api/backoffice/projetos/{id}/timeline` (RF12)
+- [x] `IProcessadorImagens` com SkiaSharp: valida os primeiros bytes (JPEG, PNG, WebP), recusa SVG, aplica a orientação, reprocessa e remove o EXIF (SEG17, SEG19)
+- [x] Limite de 5 MB por imagem, no Kestrel e no endpoint (SEG18)
+- [x] `IArmazenamentoImagens` em disco, fora do `wwwroot`, com nomes gerados (GUID) (SEG20, RNF05)
+- [x] Enviar, remover e reordenar imagens dos projetos (RF13)
+- [x] Apagar os ficheiros só depois de a transação ter sucesso (regras de remoção do modelo de dados)
+- [x] Testes: um ficheiro de texto com extensão `.jpg` é recusado; o EXIF é removido; apagar um projeto apaga os ficheiros; a timeline usa a cache e sobrevive a uma falha do GitHub (com um `IGithub` falso)
 
 **Concluída quando:** é possível enviar imagens, ver a timeline de commits de um projeto e apagar um projeto sem deixar ficheiros órfãos.
 

@@ -48,7 +48,7 @@ flowchart LR
 | Backend | Isopoh.Cryptography.Argon2 | Hash das passwords ([RNF01](01-requisitos.md)) |
 | Backend | Otp.NET + QRCoder | Códigos 2FA e o QR code de ativação ([SEG09](03-seguranca.md)) |
 | Backend | Markdig + HtmlSanitizer | Markdown para HTML seguro ([SEG21](03-seguranca.md)) |
-| Backend | SixLabors.ImageSharp | Validar e reprocessar imagens ([SEG17–SEG19](03-seguranca.md)) |
+| Backend | SkiaSharp | Validar e reprocessar imagens ([SEG17–SEG19](03-seguranca.md)); licença MIT. Escolhido em vez do ImageSharp 4, que exige uma chave de licença nos builds Release |
 | Base de dados | PostgreSQL | Dados |
 | Desenvolvimento | Docker Compose | PostgreSQL local, sem o instalar na máquina |
 
@@ -121,7 +121,7 @@ Os dois partilham a mesma configuração das tabelas, por isso o modelo só est�
 | --- | --- | --- |
 | `IPasswordHasher` | `Argon2PasswordHasher` | Hash e verificação das passwords |
 | `IArmazenamentoImagens` | `ArmazenamentoDiscoLocal` | Gravar, ler e apagar ficheiros; troca-se por blob storage sem mexer nos services |
-| `IProcessadorImagens` | `ProcessadorImageSharp` | Validar o tipo real, reprocessar e remover o EXIF |
+| `IProcessadorImagens` | `ProcessadorSkia` | Validar o tipo real, aplicar a orientação, reprocessar e remover o EXIF |
 | `IConversorMarkdown` | `ConversorMarkdig` | Markdown para HTML sanitizado |
 | `IGithub` | `GithubApi` | Ler os commits de um repositório na API REST do GitHub (SEG29) |
 | `ITotp` | `TotpOtpNet` | Gerar o segredo, o QR code e validar os códigos |
@@ -154,10 +154,10 @@ Os dois partilham a mesma configuração das tabelas, por isso o modelo só est�
 | GET, POST | `/projetos` | Listar todos e criar |
 | GET, PUT, DELETE | `/projetos/{id}` | Ver, editar e remover |
 | PUT | `/projetos/{id}/publico` | Publicar ou despublicar |
-| POST | `/projetos/{id}/imagens` | Enviar imagens do projeto |
+| POST | `/projetos/{id}/imagens` | Enviar uma imagem do projeto (multipart, campo `ficheiro`) |
 | GET | `/projetos/{id}/timeline` | Os commits do repositório do projeto (também dos não públicos) |
-| DELETE | `/imagens/{id}` | Remover uma imagem |
-| PUT | `/imagens/ordem` | Gravar a nova ordem das imagens |
+| PUT | `/projetos/{id}/imagens/ordem` | Gravar a nova ordem das imagens do projeto |
+| GET, DELETE | `/imagens/{id}` | Ver o ficheiro (também de projetos não públicos) e remover uma imagem |
 | POST | `/markdown/pre-visualizar` | Devolve o HTML de um texto, para a pré-visualização no editor |
 
 ### Fluxo do login
@@ -205,7 +205,8 @@ sequenceDiagram
 - **`TimelineService`** (Core) lê o projeto, tira o dono e o repositório do link e pede os commits ao `IGithub`, com cache de 10 minutos por repositório.
 - **`GithubApi`** (Infrastructure) usa um `HttpClient` com o endereço fixo `https://api.github.com`, o cabeçalho `User-Agent` (obrigatório no GitHub), tempo limite de 10 segundos e, se configurado, o token em `Github:Token`.
 - **São mostrados os 100 commits mais recentes** do branch por defeito (uma página da API do GitHub). Cada um leva a primeira linha da mensagem, o autor, a data e o link para o commit no GitHub.
-- **Se o GitHub falhar**, devolve-se a última versão em cache ou, sem ela, a indicação de que a timeline está indisponível; a página do projeto continua a funcionar.
+- **Se o GitHub falhar**, devolve-se a última versão em cache ou, sem ela, a indicação de que a timeline está indisponível; a página do projeto continua a funcionar. Depois de uma falha, espera-se 1 minuto antes de voltar a pedir.
+- **A resposta tem um `estado`:** `atual`, `desatualizada` (o GitHub falhou e estes são os commits da última resposta), `indisponivel`, `repositorioNaoEncontrado` (não existe ou é privado sem acesso) ou `semRepositorio`.
 - As regras de segurança (só links do GitHub, texto e não HTML, repositórios privados) estão em [SEG29](03-seguranca.md).
 
 ## Frontends

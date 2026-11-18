@@ -1,5 +1,6 @@
 using Portfolio.Api.Comandos;
 using Portfolio.Api.Configuracao;
+using Portfolio.Api.Projetos;
 using Portfolio.Infrastructure.Dados;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,9 @@ if (args is ["migrar", ..])
 }
 
 builder.Services.AddPortfolioApi(builder.Configuration);
+
+// SEG18: limite global do corpo dos pedidos no Kestrel (o maior é o envio de uma imagem).
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = ImagensController.TamanhoMaximoPedido);
 
 var app = builder.Build();
 

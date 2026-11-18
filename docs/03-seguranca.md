@@ -69,8 +69,8 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
 ### Imagens
 
 - **SEG17 — Validar o conteúdo, não o nome.** Verificar os primeiros bytes do ficheiro (assinatura JPEG, PNG ou WebP), e não só a extensão ou o `Content-Type`, que o cliente controla. SVG não é permitido, porque pode conter JavaScript.
-- **SEG18 — Limite de tamanho.** Por exemplo, 5 MB por imagem, aplicado no servidor (Kestrel e endpoint).
-- **SEG19 — Reprocessar as imagens.** Abrir e voltar a gravar cada imagem (por exemplo com ImageSharp). Isto remove os metadados EXIF, que podem incluir a localização GPS de onde a foto foi tirada, e neutraliza ficheiros malformados.
+- **SEG18 — Limite de tamanho.** 5 MB por imagem, aplicado no servidor (Kestrel e endpoint, com 6 MB para o pedido inteiro). Também se recusam imagens com mais de 40 megapíxeis: um ficheiro pequeno pode ter dimensões enormes e ocupar gigabytes de memória ao ser aberto.
+- **SEG19 — Reprocessar as imagens.** Abrir e voltar a gravar cada imagem a partir dos píxeis (com o SkiaSharp), depois de aplicar a orientação guardada no EXIF. Isto remove os metadados EXIF, IPTC e XMP, que podem incluir a localização GPS de onde a foto foi tirada, que podem incluir a localização GPS de onde a foto foi tirada, e neutraliza ficheiros malformados.
 - **SEG20 — Guardar fora da pasta pública.** Os ficheiros não ficam em `wwwroot`. São servidos por um endpoint que verifica se o projeto é público (SEG16) e que envia `X-Content-Type-Options: nosniff`.
 
 ### Conteúdo

@@ -17,16 +17,21 @@ public sealed record PedidoPublicar(bool Publico);
 
 public sealed record RespostaProjeto(
     int Id, string Nome, string Slug, string? Descricao, string? RepositorioGithub, bool Publico,
-    DateTime CriadoEm, DateTime AtualizadoEm)
+    DateTime CriadoEm, DateTime AtualizadoEm, IReadOnlyList<RespostaImagem> Imagens)
 {
     public static RespostaProjeto De(Projeto p) =>
-        new(p.Id, p.Nome, p.Slug, p.Descricao, p.RepositorioGithub, p.Publico, p.CriadoEm, p.AtualizadoEm);
+        new(p.Id, p.Nome, p.Slug, p.Descricao, p.RepositorioGithub, p.Publico, p.CriadoEm, p.AtualizadoEm,
+            p.Imagens.OrderBy(i => i.Ordem).Select(RespostaImagem.De).ToList());
 }
+
+// Estado: atual, desatualizada (o GitHub falhou; são os commits da última resposta),
+// indisponivel, repositorioNaoEncontrado ou semRepositorio.
+public sealed record RespostaTimeline(EstadoTimeline Estado, DateTimeOffset? AtualizadoEm, IReadOnlyList<Commit> Commits);
 
 // Projetos no backoffice (RF06–RF08, RF10). Login completo obrigatório (FallbackPolicy, SEG13).
 [ApiController]
 [Route("api/backoffice/projetos")]
-public sealed class ProjetosController(ProjetoService projetos) : ControllerBase
+public sealed class ProjetosController(ProjetoService projetos, TimelineService timeline) : ControllerBase
 {
     // Todos, públicos e não públicos, do mais recente para o mais antigo.
     [HttpGet]
@@ -54,6 +59,18 @@ public sealed class ProjetosController(ProjetoService projetos) : ControllerBase
     [HttpPut("{id:int}/publico")]
     public async Task<ActionResult<RespostaProjeto>> Publicar(int id, PedidoPublicar pedido, CancellationToken ct) =>
         Responder(await projetos.PublicarAsync(id, pedido.Publico, ct));
+
+    // RF11, RF12: os commits do repositório do projeto, também dos não públicos.
+    [HttpGet("{id:int}/timeline")]
+    public async Task<ActionResult<RespostaTimeline>> Timeline(int id, CancellationToken ct)
+    {
+        var resultado = await timeline.ObterAsync(id, ct);
+        if (resultado.Erro is { } erro)
+            return this.Para(erro);
+
+        var t = resultado.Valor!;
+        return new RespostaTimeline(t.Estado, t.AtualizadoEm, t.Commits);
+    }
 
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Remover(int id, CancellationToken ct) =>
