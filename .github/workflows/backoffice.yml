@@ -1,0 +1,47 @@
+name: Backoffice
+
+# Frontend do backoffice (frontend/backoffice): ESLint, tipos, testes com cobertura mínima
+# de 80% de linhas, build de produção e vulnerabilidades nas dependências que vão para o browser.
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev, stage]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/backoffice
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # Versões exatas do package-lock.json e nenhum script de instalação (.npmrc).
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      # Os limites de cobertura estão no vite.config.ts (80% de linhas); abaixo disso falha.
+      - name: Testes com cobertura
+        run: npm run test:coverage -- --coverage.reporter=text-summary --coverage.reporter=html
+      - run: npm run build
+      # As dependências de desenvolvimento são vigiadas pelo Trivy e pelo Dependabot.
+      - name: Vulnerabilidades nas dependências de produção
+        run: npm audit --omit=dev --audit-level=high
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() && !github.event.act }}
+        with:
+          name: cobertura-backoffice
+          path: frontend/backoffice/coverage
+          if-no-files-found: ignore

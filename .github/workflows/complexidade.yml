@@ -1,7 +1,7 @@
 name: Complexidade
 
 # Complexidade ciclomática por método/função. Falha se algum passar do limite.
-# O lizard também analisa TypeScript, por isso serve para os frontends (fases 6 e 7).
+# Backend (C#) e frontends (TypeScript e TSX).
 
 on:
   pull_request:
@@ -32,6 +32,8 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo python:3.13-slim sh -c "
             pip install -q --root-user-action=ignore lizard==${LIZARD_VERSAO} &&
-            lizard backend/src --languages csharp --CCN ${COMPLEXIDADE_MAXIMA} \
-              --exclude '*/Migracoes/*' --exclude '*/obj/*' --exclude '*/bin/*' \
+            lizard backend/src frontend/*/src \
+              --languages csharp --languages typescript --languages tsx \
+              --CCN ${COMPLEXIDADE_MAXIMA} \
+              --exclude '*/Migracoes/*' --exclude '*/obj/*' --exclude '*/bin/*' --exclude '*/node_modules/*' \
               --warnings_only"

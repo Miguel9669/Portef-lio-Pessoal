@@ -9,6 +9,17 @@ updates:
       nuget:
         patterns: ["*"]
 
+  - package-ecosystem: npm
+    directory: /frontend/backoffice
+    schedule:
+      interval: weekly
+    # Só versões com pelo menos 14 dias (proteção contra pacotes comprometidos).
+    cooldown:
+      default-days: 14
+    groups:
+      npm:
+        patterns: ["*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
