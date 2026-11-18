@@ -84,3 +84,36 @@ dotnet test
 ```
 
 Os testes da base de dados arrancam um PostgreSQL num contentor (Testcontainers), com o mesmo script de arranque do `docker-compose`. Sem Docker, são ignorados localmente; no CI falham.
+
+## CI
+
+Os workflows estão em `.github/workflows/` e correm em cada pull request e em cada push para `main`, `stage` e `dev`:
+
+| Workflow | Verifica | Falha quando |
+| --- | --- | --- |
+| Backend | Build, migrações em dia, testes com cobertura, permissões da base de dados | Cobertura de linhas abaixo de 80% |
+| Complexidade | Complexidade ciclomática (lizard) | Um método passa de 10 |
+| Sintaxe | `dotnet format`, actionlint, shellcheck | Erros de formatação, nos workflows ou nos scripts |
+| Segurança | CodeQL, gitleaks, dependency review, zizmor | Vulnerabilidade, segredo ou dependência vulnerável |
+| Trivy | Repositório e imagens Docker | Vulnerabilidade HIGH ou CRITICAL com correção |
+| Mutações | Stryker.NET (ao domingo ou à mão) | Por agora só informa |
+
+### CI local
+
+Os mesmos workflows correm localmente com o [act](https://nektosact.com/installation/), sobre o último commit e numa cópia limpa do repositório:
+
+```bash
+./ci.sh                    # todos, exceto mutações
+./ci.sh backend sintaxe    # só esses
+./ci.sh mutacoes           # mutation testing
+```
+
+Os relatórios ficam em `.ci-local/` (a cobertura em `.ci-local/cobertura/index.html`). Localmente ficam de fora o CodeQL, o dependency review e o envio de resultados para o GitHub.
+
+Para o CI correr antes de cada push (e o cancelar se falhar), uma vez por clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Numa emergência: `git push --no-verify`.
