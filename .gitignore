@@ -1,0 +1,31 @@
+# Segredos (SEG25)
+.env
+*.env.local
+.env.*.local
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+
+# Node / frontends
+node_modules/
+dist/
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+
+# Imagens enviadas em desenvolvimento (fase 4)
+backend/**/armazenamento/
+
+# Editores e sistema
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

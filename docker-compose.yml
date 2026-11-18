@@ -1,0 +1,30 @@
+# PostgreSQL para desenvolvimento local.
+# Antes do primeiro arranque: copiar .env.example para .env e definir as passwords.
+#   docker compose up -d
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: portfolio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      PORTFOLIO_DB: portfolio
+      PORTFOLIO_LEITURA_PASSWORD: ${PORTFOLIO_LEITURA_PASSWORD:?defina PORTFOLIO_LEITURA_PASSWORD no .env}
+      PORTFOLIO_ESCRITA_PASSWORD: ${PORTFOLIO_ESCRITA_PASSWORD:?defina PORTFOLIO_ESCRITA_PASSWORD no .env}
+      PORTFOLIO_MIGRACOES_PASSWORD: ${PORTFOLIO_MIGRACOES_PASSWORD:?defina PORTFOLIO_MIGRACOES_PASSWORD no .env}
+    ports:
+      # Só acessível a partir desta máquina.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-dados:/var/lib/postgresql
+      # Corre só na primeira vez, com a pasta de dados vazia.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d portfolio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-dados:

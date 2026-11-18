@@ -1,0 +1,7 @@
+@Api = http://localhost:5079
+
+### Especificação OpenAPI (só em desenvolvimento)
+GET {{Api}}/openapi/v1.json
+Accept: application/json
+
+###

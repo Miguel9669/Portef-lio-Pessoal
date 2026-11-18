@@ -1,0 +1,39 @@
+name: Backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release
+
+  base-de-dados:
+    # Arranca o PostgreSQL do docker-compose e confirma as permissões dos utilizadores (SEG01).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Arrancar o PostgreSQL
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait
+      - name: Verificar permissões
+        run: ./docker/postgres/verificar-permissoes.sh
+      - name: Registos do PostgreSQL
+        if: failure()
+        run: docker compose logs postgres
