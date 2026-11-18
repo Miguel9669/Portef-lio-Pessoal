@@ -21,8 +21,3 @@ public class ImagemProjeto : Imagem
 {
     public int ProjetoId { get; set; }
 }
-
-public class ImagemNota : Imagem
-{
-    public int NotaId { get; set; }
-}

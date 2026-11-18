@@ -95,51 +95,6 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                     b.ToTable("CodigoRecuperacao");
                 });
 
-            modelBuilder.Entity("Portfolio.Core.Entidades.ImagemNota", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Ficheiro")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("NomeOriginal")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<int>("NotaId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Ordem")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("TamanhoBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("TipoMime")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Ficheiro")
-                        .IsUnique();
-
-                    b.HasIndex("NotaId");
-
-                    b.ToTable("ImagemNota");
-                });
-
             modelBuilder.Entity("Portfolio.Core.Entidades.ImagemProjeto", b =>
                 {
                     b.Property<int>("Id")
@@ -185,40 +140,6 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                     b.ToTable("ImagemProjeto");
                 });
 
-            modelBuilder.Entity("Portfolio.Core.Entidades.Nota", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AtualizadoEm")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CriadoEm")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ProjetoId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Texto")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Nota");
-
-                    b.Property<string>("Titulo")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjetoId", "CriadoEm");
-
-                    b.ToTable("Nota");
-                });
-
             modelBuilder.Entity("Portfolio.Core.Entidades.Projeto", b =>
                 {
                     b.Property<int>("Id")
@@ -246,6 +167,10 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("RepositorioGithub")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(160)
@@ -258,7 +183,10 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.ToTable("Projeto");
+                    b.ToTable("Projeto", t =>
+                        {
+                            t.HasCheckConstraint("CK_Projeto_RepositorioGithub", "\"RepositorioGithub\" ~ '^https://github\\.com/[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$'");
+                        });
                 });
 
             modelBuilder.Entity("Portfolio.Core.Entidades.Utilizador", b =>
@@ -325,15 +253,6 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Portfolio.Core.Entidades.ImagemNota", b =>
-                {
-                    b.HasOne("Portfolio.Core.Entidades.Nota", null)
-                        .WithMany("Imagens")
-                        .HasForeignKey("NotaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Portfolio.Core.Entidades.ImagemProjeto", b =>
                 {
                     b.HasOne("Portfolio.Core.Entidades.Projeto", null)
@@ -343,25 +262,9 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Portfolio.Core.Entidades.Nota", b =>
-                {
-                    b.HasOne("Portfolio.Core.Entidades.Projeto", null)
-                        .WithMany("Notas")
-                        .HasForeignKey("ProjetoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Portfolio.Core.Entidades.Nota", b =>
-                {
-                    b.Navigation("Imagens");
-                });
-
             modelBuilder.Entity("Portfolio.Core.Entidades.Projeto", b =>
                 {
                     b.Navigation("Imagens");
-
-                    b.Navigation("Notas");
                 });
 
             modelBuilder.Entity("Portfolio.Core.Entidades.Utilizador", b =>

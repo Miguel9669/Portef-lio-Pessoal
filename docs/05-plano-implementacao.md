@@ -1,6 +1,6 @@
 # Plano de Implementação — Portfólio Pessoal
 
-**Versão:** 0.1 (rascunho) · **Data:** 2026-11-17 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md), [03-seguranca.md](03-seguranca.md), [04-componentes.md](04-componentes.md)
+**Versão:** 0.2 (rascunho) · **Data:** 2026-11-18 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md), [03-seguranca.md](03-seguranca.md), [04-componentes.md](04-componentes.md)
 
 ## Visão geral
 
@@ -11,7 +11,7 @@ flowchart LR
     F0[0. Fundações] --> F1[1. Base de dados]
     F1 --> F2[2. Autenticação]
     F2 --> F3[3. Conteúdo e projetos]
-    F3 --> F4[4. Timeline e imagens]
+    F3 --> F4[4. Imagens e timeline do GitHub]
     F4 --> F5[5. API pública]
     F4 --> F6[6. Backoffice]
     F5 --> F7[7. Site público]
@@ -43,7 +43,7 @@ Estrutura do repositório e ambiente de desenvolvimento.
 
 ## Fase 1 — Base de dados
 
-As 7 tabelas de [02-base-de-dados.md](02-base-de-dados.md).
+As 7 tabelas de [02-base-de-dados.md](02-base-de-dados.md) (5 desde que as notas foram retiradas; ver o histórico nesse documento).
 
 - [x] Entidades e enums em `Portfolio.Core`
 - [x] Configuração das tabelas (tamanhos, índices, FKs com cascata) partilhada pelos dois DbContexts
@@ -99,25 +99,28 @@ Gestão dos blocos e dos projetos no backoffice (API).
 - [ ] `POST /markdown/pre-visualizar`
 - [ ] Blocos: listar, criar, editar, remover, ocultar e reordenar; slug gerado a partir do título (RF04)
 - [ ] Projetos: listar, criar, editar e remover; slug único gerado a partir do nome (RF06, RF07)
+- [ ] Link do GitHub do projeto, validado no formato `https://github.com/dono/repositorio` (RF10, SEG29)
 - [ ] Publicar e despublicar um projeto (RF08)
 - [ ] DTOs para entrada e saída; as entidades nunca são expostas diretamente
-- [ ] Testes: Markdown com `<script>` e links `javascript:` sai limpo; slugs repetidos geram um sufixo
+- [ ] Testes: Markdown com `<script>` e links `javascript:` sai limpo; slugs repetidos geram um sufixo; links que não sejam do GitHub são recusados
 
 **Concluída quando:** é possível gerir blocos e projetos pela página de documentação da API, com login.
 
-## Fase 4 — Timeline e imagens
+## Fase 4 — Imagens e timeline do GitHub
 
-Notas da timeline e envio de imagens.
+Envio de imagens dos projetos e a timeline com os commits do GitHub.
 
-- [ ] Notas: listar a timeline de um projeto, criar, editar e remover (RF10–RF12)
+- [ ] `IGithub` com `HttpClient` para `api.github.com`: `User-Agent`, tempo limite de 10 s, token opcional em `Github:Token` (SEG25, SEG29)
+- [ ] `TimelineService`: os 100 commits mais recentes, com cache de 10 minutos por repositório; se o GitHub falhar, a última versão em cache ou "indisponível" (RF11)
+- [ ] `GET /api/backoffice/projetos/{id}/timeline` (RF12)
 - [ ] `IProcessadorImagens` com ImageSharp: valida os primeiros bytes (JPEG, PNG, WebP), recusa SVG, reprocessa e remove o EXIF (SEG17, SEG19)
 - [ ] Limite de 5 MB por imagem, no Kestrel e no endpoint (SEG18)
 - [ ] `IArmazenamentoImagens` em disco, fora do `wwwroot`, com nomes gerados (GUID) (SEG20, RNF05)
-- [ ] Enviar, remover e reordenar imagens de projetos e de notas (RF13)
+- [ ] Enviar, remover e reordenar imagens dos projetos (RF13)
 - [ ] Apagar os ficheiros só depois de a transação ter sucesso (regras de remoção do modelo de dados)
-- [ ] Testes: um ficheiro de texto com extensão `.jpg` é recusado; o EXIF é removido; apagar um projeto apaga os ficheiros
+- [ ] Testes: um ficheiro de texto com extensão `.jpg` é recusado; o EXIF é removido; apagar um projeto apaga os ficheiros; a timeline usa a cache e sobrevive a uma falha do GitHub (com um `IGithub` falso)
 
-**Concluída quando:** é possível criar notas com imagens e apagar um projeto sem deixar ficheiros órfãos.
+**Concluída quando:** é possível enviar imagens, ver a timeline de commits de um projeto e apagar um projeto sem deixar ficheiros órfãos.
 
 ## Fase 5 — API pública
 
@@ -125,9 +128,9 @@ Os endpoints de `/api/publico`, só de leitura.
 
 - [ ] `SitePublicoService` sobre o `PublicoDbContext`
 - [ ] Blocos públicos por ordem, com o HTML já gerado (RF05)
-- [ ] Projetos públicos, projeto por slug, timeline e nota (RF09, RF12)
+- [ ] Projetos públicos, projeto por slug e timeline de commits (RF09, RF12)
 - [ ] `GET /imagens/{ficheiro}`: só serve imagens de projetos públicos, com `nosniff` (SEG16, SEG20)
-- [ ] Testes: nada de um projeto não público (projeto, notas ou imagens) aparece em nenhum endpoint público
+- [ ] Testes: nada de um projeto não público (projeto, imagens ou timeline) aparece em nenhum endpoint público
 
 **Concluída quando:** todos os endpoints públicos respondem sem login e o teste de projetos não públicos passa.
 
@@ -139,8 +142,8 @@ Aplicação Vite + React + TypeScript + Tailwind + shadcn/ui em `frontend/backof
 - [ ] Login, código 2FA e configuração do 2FA na primeira vez (QR code e códigos de recuperação)
 - [ ] Rotas protegidas: sem sessão, volta ao login
 - [ ] Blocos: lista com arrastar para reordenar (dnd-kit), mostrar ou ocultar, editor de Markdown com pré-visualização
-- [ ] Projetos: lista, criar, editar, publicar, remover com confirmação, imagens do projeto
-- [ ] Timeline: lista de notas, editor de nota com imagens
+- [ ] Projetos: lista, criar, editar (com o link do GitHub), publicar, remover com confirmação, imagens do projeto
+- [ ] Timeline: commits do projeto, cada um com link para o GitHub; mensagens mostradas como texto (SEG29)
 - [ ] Formulários com React Hook Form + Zod e mensagens de erro da API
 
 **Concluída quando:** todo o conteúdo do site pode ser gerido no backoffice, sem usar a página de documentação da API.
@@ -151,8 +154,7 @@ Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 
 - [ ] Projeto Next.js (App Router) com Tailwind e shadcn/ui; `API_URL` em variável de ambiente
 - [ ] Página inicial: blocos por ordem e lista de projetos (RF05, RF09)
-- [ ] Página do projeto: imagens e timeline (RF12)
-- [ ] Página da nota
+- [ ] Página do projeto: imagens e timeline de commits, com link para cada commit no GitHub (RF12); mensagens mostradas como texto (SEG29)
 - [ ] Meta tags por página (`generateMetadata`) para as pré-visualizações de links
 - [ ] Cache com regeneração a cada 60 segundos (ISR)
 - [ ] `rewrite` de `/api/publico/imagens` para a API
@@ -161,8 +163,8 @@ Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 
 ## Fase 8 — Testes e revisão
 
-- [ ] Revisão das medidas SEG01–SEG28, uma a uma, contra o código
-- [ ] Testes de ponta a ponta do fluxo principal: login com 2FA, criar projeto, adicionar nota com imagem, publicar, ver no site
+- [ ] Revisão das medidas SEG01–SEG29, uma a uma, contra o código
+- [ ] Testes de ponta a ponta do fluxo principal: login com 2FA, criar projeto com link do GitHub e imagem, publicar, ver no site com a timeline
 - [ ] `dotnet list package --vulnerable` e `npm audit` sem vulnerabilidades por resolver
 - [ ] Rever os documentos em `docs/` para refletirem o que foi construído
 
