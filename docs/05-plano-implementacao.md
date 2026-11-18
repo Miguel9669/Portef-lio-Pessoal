@@ -179,7 +179,7 @@ Fica para depois da v1 local ([decisão de alojamento](01-requisitos.md)).
 - [ ] VPS com nginx e HTTPS (Let's Encrypt) e HSTS
 - [ ] API e Next.js como processos (systemd ou Docker) atrás do nginx; backoffice como ficheiros estáticos
 - [ ] Domínios: site, `admin.` para o backoffice, `/api` encaminhado para a API
-- [ ] IP real do visitante enviado à API (`ForwardedHeaders`), também nas imagens que passam pelo `rewrite` do Next.js; sem isto, o rate limit por IP vê todos os pedidos a vir do proxy (SEG06)
+- [ ] IP real do visitante e protocolo original enviados à API (`ForwardedHeaders`, `X-Forwarded-For` e `X-Forwarded-Proto`), também nas imagens que passam pelo `rewrite` do Next.js. Sem o IP, o rate limit vê todos os pedidos a vir do proxy (SEG06); sem o protocolo, a API julga que o pedido é HTTP e recusa emitir o token CSRF (SEG11)
 - [ ] Segredos em variáveis de ambiente no servidor (SEG25)
 - [ ] Migrações aplicadas no deploy com `portfolio_migracoes`
 - [ ] Cópias de segurança diárias da base de dados e da pasta das imagens

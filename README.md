@@ -74,7 +74,9 @@ cd backend
 dotnet run --project src/Portfolio.Api
 ```
 
-A página para testar os endpoints fica em `http://localhost:5079/scalar` (só em desenvolvimento).
+A API corre em `https://localhost:7003`, com o certificado de desenvolvimento do .NET (`dotnet dev-certs https`; para o browser confiar nele, `dotnet dev-certs https --trust`). Corre em HTTPS também em desenvolvimento porque o token CSRF e o cookie de sessão só circulam por HTTPS.
+
+A página para testar os endpoints fica em `https://localhost:7003/scalar` (só em desenvolvimento).
 
 ### 5. Conta do backoffice
 
@@ -122,7 +124,7 @@ npm ci
 npm run dev
 ```
 
-Abre em `http://localhost:5173`. O Vite reencaminha `/api` para a API (`http://localhost:5079`, ou `API_URL`), por isso o browser vê tudo no mesmo endereço e o cookie de sessão funciona como em produção.
+Abre em `http://localhost:5173`. O Vite reencaminha `/api` para a API (`https://localhost:7003`, ou `API_URL`), por isso o browser vê tudo no mesmo endereço e o cookie de sessão funciona como em produção.
 
 As dependências estão com versões exatas e sem scripts de instalação (`.npmrc`). Para acrescentar uma, usar uma versão com pelo menos duas semanas: `npm install --before=AAAA-MM-DD pacote`.
 

@@ -12,7 +12,9 @@ export default defineConfig({
     strictPort: true,
     // O browser vê a API no mesmo endereço, por isso o cookie SameSite=Strict funciona
     // como em produção e não é preciso CORS (docs/04-componentes.md).
-    proxy: { '/api': process.env.API_URL ?? 'http://localhost:5079' },
+    // A API corre em HTTPS também em desenvolvimento: o token CSRF só circula por HTTPS (SEG11).
+    // secure: false aceita o certificado de desenvolvimento do .NET, que o Node não conhece.
+    proxy: { '/api': { target: process.env.API_URL ?? 'https://localhost:7003', secure: false } },
   },
   test: {
     environment: 'jsdom',
