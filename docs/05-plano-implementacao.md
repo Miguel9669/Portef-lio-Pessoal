@@ -95,14 +95,14 @@ Login com 2FA e toda a proteção do backoffice. Vem antes das funcionalidades p
 
 Gestão dos blocos e dos projetos no backoffice (API).
 
-- [ ] `IConversorMarkdown` com Markdig (HTML embutido desativado) e HtmlSanitizer (SEG21)
-- [ ] `POST /markdown/pre-visualizar`
-- [ ] Blocos: listar, criar, editar, remover, ocultar e reordenar; slug gerado a partir do título (RF04)
-- [ ] Projetos: listar, criar, editar e remover; slug único gerado a partir do nome (RF06, RF07)
-- [ ] Link do GitHub do projeto, validado no formato `https://github.com/dono/repositorio` (RF10, SEG29)
-- [ ] Publicar e despublicar um projeto (RF08)
-- [ ] DTOs para entrada e saída; as entidades nunca são expostas diretamente
-- [ ] Testes: Markdown com `<script>` e links `javascript:` sai limpo; slugs repetidos geram um sufixo; links que não sejam do GitHub são recusados
+- [x] `IConversorMarkdown` com Markdig (HTML embutido desativado) e HtmlSanitizer (SEG21)
+- [x] `POST /markdown/pre-visualizar`
+- [x] Blocos: listar, criar, editar, remover, ocultar e reordenar; slug gerado a partir do título (RF04)
+- [x] Projetos: listar, criar, editar e remover; slug único gerado a partir do nome (RF06, RF07)
+- [x] Link do GitHub do projeto, validado no formato `https://github.com/dono/repositorio` (RF10, SEG29)
+- [x] Publicar e despublicar um projeto (RF08)
+- [x] DTOs para entrada e saída; as entidades nunca são expostas diretamente
+- [x] Testes: Markdown com `<script>` e links `javascript:` sai limpo; slugs repetidos geram um sufixo; links que não sejam do GitHub são recusados
 
 **Concluída quando:** é possível gerir blocos e projetos pela página de documentação da API, com login.
 

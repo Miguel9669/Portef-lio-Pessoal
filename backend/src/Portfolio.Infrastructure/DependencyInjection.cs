@@ -2,7 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Portfolio.Core.Autenticacao;
+using Portfolio.Core.Conteudo;
+using Portfolio.Core.Projetos;
 using Portfolio.Infrastructure.Autenticacao;
+using Portfolio.Infrastructure.Conteudo;
 using Portfolio.Infrastructure.Dados;
 
 namespace Portfolio.Infrastructure;
@@ -24,6 +27,11 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
         services.AddSingleton<ITotp, TotpOtpNet>();
         services.AddSingleton<ICifraSegredos, CifraDataProtection>();
+
+        // Conteúdo e projetos.
+        services.AddScoped<IRepositorioBlocos, RepositorioBlocos>();
+        services.AddScoped<IRepositorioProjetos, RepositorioProjetos>();
+        services.AddSingleton<IConversorMarkdown, ConversorMarkdig>();
 
         return services;
     }

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Portfolio.Api.Autenticacao;
+using Portfolio.Core.Conteudo;
+using Portfolio.Core.Projetos;
 using Portfolio.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -12,6 +14,8 @@ public static class ConfiguracaoApi
         services.AddInfrastructure(configuracao);
         AddDataProtection(services, configuracao);
         services.AddAutenticacao(configuracao);
+        services.AddScoped<BlocoConteudoService>();
+        services.AddScoped<ProjetoService>();
 
         // SEG11: token CSRF obrigatório em todos os pedidos de escrita (POST, PUT, DELETE).
         services.AddControllers(o => o.Filters.Add<FiltroCsrf>());
