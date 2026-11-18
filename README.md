@@ -76,6 +76,29 @@ dotnet run --project src/Portfolio.Api
 
 A página para testar os endpoints fica em `http://localhost:5079/scalar` (só em desenvolvimento).
 
+### 5. Conta do backoffice
+
+Não há registo pela internet: a conta cria-se uma única vez, por comando, e a password é pedida sem aparecer no ecrã.
+
+```bash
+cd backend
+dotnet run --project src/Portfolio.Api -- criar-admin
+```
+
+No primeiro login, o backoffice pede para configurar o 2FA (QR code para o Google Authenticator, Authy ou Microsoft Authenticator) e mostra 10 códigos de recuperação, uma única vez.
+
+Password esquecida ou telemóvel do 2FA perdido:
+
+```bash
+dotnet run --project src/Portfolio.Api -- repor-password
+```
+
+Define uma password nova, desativa o 2FA (configura-se de novo no login seguinte), apaga os códigos de recuperação e termina todas as sessões.
+
+O segredo do 2FA fica cifrado com chaves da Data Protection API, fora da base de dados. Em desenvolvimento ficam em `~/.aspnet/DataProtection-Keys`; em produção, numa pasta definida em `DataProtection__PastaChaves`. Se as chaves se perderem, as sessões terminam e o 2FA tem de ser reposto com `repor-password`.
+
+Os valores do login (bloqueio, sessão, rate limit) estão na secção `Autenticacao` do `appsettings.json`.
+
 ### Testes
 
 ```bash

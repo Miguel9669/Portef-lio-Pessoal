@@ -18,6 +18,7 @@ public class ArranqueTests
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
     }
 
+    // Em produção a rota não existe e, como tudo é fechado por defeito (SEG13), a resposta é 401.
     [Fact]
     public async Task Em_producao_a_documentacao_da_api_nao_existe()
     {
@@ -26,7 +27,7 @@ public class ArranqueTests
 
         var resposta = await cliente.GetAsync("/openapi/v1.json", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, resposta.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, resposta.StatusCode);
     }
 
     private static WebApplicationFactory<Program> CriarFabrica(string ambiente) =>
