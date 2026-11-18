@@ -38,6 +38,7 @@ base="${XDG_CACHE_HOME:-$HOME/.cache}/portfolio-ci"
 mkdir -p "$base" .ci-local
 trabalho=$(mktemp -d "$base/execucao.XXXXXX")
 
+# shellcheck disable=SC2329 # chamada pelo trap
 limpar() {
   # Os contentores correm como root, por isso os ficheiros só se apagam com o Docker.
   docker run --rm -v "$trabalho:/t" alpine:3.22 rm -rf /t/copias >/dev/null 2>&1 || true
