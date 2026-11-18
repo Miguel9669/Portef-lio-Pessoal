@@ -31,13 +31,13 @@ As fases 5 e 6 são independentes e podem ser feitas em qualquer ordem. Até à 
 
 Estrutura do repositório e ambiente de desenvolvimento.
 
-- [ ] `docker-compose.yml` com PostgreSQL e um script que cria os três utilizadores: `portfolio_leitura`, `portfolio_escrita` e `portfolio_migracoes` (SEG01)
-- [ ] Solução .NET em `backend/` com `Portfolio.Api`, `Portfolio.Core`, `Portfolio.Infrastructure` e `Portfolio.Tests`, com as dependências entre eles
-- [ ] `.gitignore` para .NET e Node, e `.editorconfig`
-- [ ] Connection strings em `dotnet user-secrets`, nunca no `appsettings.json` (SEG25)
-- [ ] Página de documentação da API (Scalar), só em desenvolvimento
-- [ ] GitHub Actions: build e testes do backend em cada pull request
-- [ ] Dependabot ativo no repositório (SEG28)
+- [x] `docker-compose.yml` com PostgreSQL e um script que cria os três utilizadores: `portfolio_leitura`, `portfolio_escrita` e `portfolio_migracoes` (SEG01)
+- [x] Solução .NET em `backend/` com `Portfolio.Api`, `Portfolio.Core`, `Portfolio.Infrastructure` e `Portfolio.Tests`, com as dependências entre eles
+- [x] `.gitignore` para .NET e Node, e `.editorconfig`
+- [x] Connection strings em `dotnet user-secrets`, nunca no `appsettings.json` (SEG25)
+- [x] Página de documentação da API (Scalar), só em desenvolvimento
+- [x] GitHub Actions: build e testes do backend em cada pull request
+- [x] Dependabot ativo no repositório (SEG28)
 
 **Concluída quando:** `docker compose up -d` e `dotnet build` funcionam numa máquina limpa, e o GitHub Actions corre num pull request.
 

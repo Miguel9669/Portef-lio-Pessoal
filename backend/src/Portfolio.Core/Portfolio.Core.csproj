@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Entidades, DTOs, interfaces e services. Não depende de EF, PostgreSQL nem HTTP. -->
+
+</Project>
