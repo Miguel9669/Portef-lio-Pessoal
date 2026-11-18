@@ -6,6 +6,7 @@ using Portfolio.Core.Autenticacao;
 using Portfolio.Core.Conteudo;
 using Portfolio.Core.Imagens;
 using Portfolio.Core.Projetos;
+using Portfolio.Core.SitePublico;
 using Portfolio.Infrastructure.Autenticacao;
 using Portfolio.Infrastructure.Conteudo;
 using Portfolio.Infrastructure.Dados;
@@ -35,6 +36,7 @@ public static class DependencyInjection
         // Conteúdo e projetos.
         services.AddScoped<IRepositorioBlocos, RepositorioBlocos>();
         services.AddScoped<IRepositorioProjetos, RepositorioProjetos>();
+        services.AddScoped<IRepositorioPublico, RepositorioPublico>();
         services.AddSingleton<IConversorMarkdown, ConversorMarkdig>();
 
         // Imagens (SEG17–SEG20). As opções são lidas quando são precisas, já com toda a configuração.
