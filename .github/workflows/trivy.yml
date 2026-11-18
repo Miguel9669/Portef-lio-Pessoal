@@ -1,0 +1,76 @@
+name: Trivy
+
+# Vulnerabilidades, segredos e más configurações no repositório (dependências NuGet,
+# docker-compose, Dockerfiles) e nas imagens Docker usadas.
+# Os resultados aparecem em Security > Code scanning.
+# O Trivy corre pela imagem oficial com versão fixa, em vez da action.
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev, stage, prod]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TRIVY_IMAGEM: aquasec/trivy:0.76.1
+  SEVERIDADES: HIGH,CRITICAL
+
+jobs:
+  repositorio:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Relatório SARIF
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo "$TRIVY_IMAGEM" fs . \
+            --scanners vuln,secret,misconfig \
+            --format sarif --output trivy-repositorio.sarif
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always()
+        with:
+          sarif_file: trivy-repositorio.sarif
+          category: trivy-repositorio
+      - name: Falhar com HIGH ou CRITICAL
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo "$TRIVY_IMAGEM" fs . \
+            --scanners vuln,secret,misconfig \
+            --severity "$SEVERIDADES" --exit-code 1
+
+  imagens:
+    # Na fase 9 juntar aqui as imagens da API e dos frontends, construídas no próprio job.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        imagem: ["postgres:18-alpine"]
+    steps:
+      # Só falha com vulnerabilidades que já têm correção (as outras não dependem de nós).
+      - name: Analisar ${{ matrix.imagem }}
+        env:
+          IMAGEM: ${{ matrix.imagem }}
+        run: |
+          docker run --rm -v "$PWD:/out" "$TRIVY_IMAGEM" image "$IMAGEM" \
+            --ignore-unfixed --format sarif --output /out/trivy-imagem.sarif
+          docker run --rm "$TRIVY_IMAGEM" image "$IMAGEM" \
+            --ignore-unfixed --severity "$SEVERIDADES" --exit-code 1
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always()
+        with:
+          sarif_file: trivy-imagem.sarif
+          category: trivy-imagem-${{ matrix.imagem }}

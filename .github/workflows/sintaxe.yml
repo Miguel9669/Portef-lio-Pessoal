@@ -1,0 +1,52 @@
+name: Sintaxe
+
+# Formatação e estilo do código, dos workflows e dos scripts de shell.
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev, stage, prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet-format:
+    # Regras do .editorconfig (espaços, namespaces, usings) e avisos dos analisadores.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      # As migrações são geradas pelo EF e ficam de fora.
+      - run: dotnet format --verify-no-changes --severity warn --exclude src/Portfolio.Infrastructure/Dados/Migracoes
+
+  workflows:
+    # actionlint valida os workflows e corre o shellcheck nos blocos `run:`.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # O shellcheck vem instalado nos runners ubuntu.
+      - name: shellcheck
+        run: find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 --no-run-if-empty shellcheck

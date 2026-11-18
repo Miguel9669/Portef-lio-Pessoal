@@ -1,0 +1,50 @@
+name: Mutações
+
+# Mutation testing (Stryker.NET): altera o código e confirma que algum teste falha.
+# Mostra se os testes verificam mesmo o comportamento, e não só se passam pelo código.
+# É lento, por isso corre só ao domingo e à mão (Actions > Mutações > Run workflow).
+
+on:
+  schedule:
+    - cron: "0 5 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stryker:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        projeto: [Portfolio.Core, Portfolio.Infrastructure, Portfolio.Api]
+    defaults:
+      run:
+        working-directory: backend/tests/Portfolio.Tests
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet tool restore
+      # --break-at 0: por agora só informa. Subir para 60 quando houver testes das fases 2 a 5.
+      - name: Stryker
+        env:
+          PROJETO: ${{ matrix.projeto }}
+        run: |
+          dotnet stryker --test-runner mtp \
+            --project "${PROJETO}.csproj" \
+            --mutate "**/*.cs" --mutate "!**/Migracoes/**" \
+            --threshold-high 80 --threshold-low 60 --break-at 0 \
+            --reporter html --reporter markdown --reporter progress \
+            --output "$GITHUB_WORKSPACE/stryker/${PROJETO}"
+          cat "$GITHUB_WORKSPACE/stryker/${PROJETO}"/reports/*.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: stryker-${{ matrix.projeto }}
+          path: stryker/${{ matrix.projeto }}/reports
+          if-no-files-found: ignore
