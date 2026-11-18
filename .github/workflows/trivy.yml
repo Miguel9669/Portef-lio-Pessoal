@@ -61,14 +61,19 @@ jobs:
         imagem: ["postgres:18-alpine"]
     steps:
       # Só falha com vulnerabilidades que já têm correção (as outras não dependem de nós).
+      # O gosu das imagens oficiais é compilado com uma versão antiga do Go e acusa CVEs da
+      # biblioteca padrão (TLS, x509, net/url) que ele não usa: só troca de utilizador no
+      # arranque do contentor. Ver https://github.com/tianon/gosu/blob/master/SECURITY.md
       - name: Analisar ${{ matrix.imagem }}
         env:
           IMAGEM: ${{ matrix.imagem }}
         run: |
           docker run --rm -v "$PWD:/out" "$TRIVY_IMAGEM" image "$IMAGEM" \
-            --ignore-unfixed --format sarif --output /out/trivy-imagem.sarif
+            --ignore-unfixed --skip-files usr/local/bin/gosu \
+            --format sarif --output /out/trivy-imagem.sarif
           docker run --rm "$TRIVY_IMAGEM" image "$IMAGEM" \
-            --ignore-unfixed --severity "$SEVERIDADES" --exit-code 1
+            --ignore-unfixed --skip-files usr/local/bin/gosu \
+            --severity "$SEVERIDADES" --exit-code 1
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: ${{ always() && !github.event.act }}
         with:

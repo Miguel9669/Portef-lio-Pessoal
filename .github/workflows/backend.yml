@@ -40,13 +40,13 @@ jobs:
       # Inclui os testes da base de dados (Testcontainers); no CI falham se não houver Docker.
       - name: Testes com cobertura
         run: |
-          dotnet test --no-build --configuration Release \
+          dotnet test --no-build --configuration Release --results-directory "$PWD/TestResults" \
             --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
       # Ficam de fora o código gerado (migrações, OpenAPI) e a fábrica usada só pelo `dotnet ef`.
       - name: Relatório de cobertura
         run: |
           dotnet reportgenerator \
-            -reports:"tests/**/TestResults/coverage.cobertura.xml" \
+            -reports:"TestResults/coverage.cobertura.xml" \
             -targetdir:cobertura \
             -reporttypes:"JsonSummary;MarkdownSummaryGithub;Html" \
             -assemblyfilters:"+Portfolio.*;-Portfolio.Tests" \
