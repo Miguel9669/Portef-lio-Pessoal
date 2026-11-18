@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Corre o CI local antes de cada push e cancela-o se falhar,
+# como os checks obrigatórios de um pull request.
+# Para saltar numa emergência: git push --no-verify
+# Ativar (uma vez por clone): git config core.hooksPath .githooks
+set -euo pipefail
+
+# Um push que só apaga branches não tem nada para testar.
+while read -r _ref_local sha_local _ref_remoto _sha_remoto; do
+  if [ "$sha_local" != "0000000000000000000000000000000000000000" ]; then
+    exec "$(git rev-parse --show-toplevel)/ci.sh"
+  fi
+done

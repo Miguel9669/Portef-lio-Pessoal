@@ -57,12 +57,13 @@ jobs:
         run: |
           cobertura=$(jq '.summary.linecoverage' cobertura/Summary.json)
           echo "Cobertura de linhas: ${cobertura}% (mínimo ${COBERTURA_MINIMA}%)"
-          if (( $(echo "$cobertura < $COBERTURA_MINIMA" | bc -l) )); then
+          if awk -v c="$cobertura" -v m="$COBERTURA_MINIMA" 'BEGIN { exit !(c < m) }'; then
             echo "::error::Cobertura de ${cobertura}% abaixo do mínimo de ${COBERTURA_MINIMA}%"
             exit 1
           fi
+      # Localmente (act) o relatório é copiado para .ci-local/ pelo ci.sh.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
+        if: ${{ always() && !github.event.act }}
         with:
           name: cobertura
           path: backend/cobertura
@@ -70,6 +71,9 @@ jobs:
 
   base-de-dados:
     # Arranca o PostgreSQL do docker-compose e confirma as permissões dos utilizadores (SEG01).
+    # Localmente o ci.sh corre o mesmo script contra o PostgreSQL de desenvolvimento,
+    # porque o container_name fixo do docker-compose chocaria com ele.
+    if: ${{ !github.event.act }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -39,7 +39,7 @@ jobs:
             --scanners vuln,secret,misconfig \
             --format sarif --output trivy-repositorio.sarif
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
-        if: always()
+        if: ${{ always() && !github.event.act }}
         with:
           sarif_file: trivy-repositorio.sarif
           category: trivy-repositorio
@@ -70,7 +70,7 @@ jobs:
           docker run --rm "$TRIVY_IMAGEM" image "$IMAGEM" \
             --ignore-unfixed --severity "$SEVERIDADES" --exit-code 1
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
-        if: always()
+        if: ${{ always() && !github.event.act }}
         with:
           sarif_file: trivy-imagem.sarif
           category: trivy-imagem-${{ matrix.imagem }}

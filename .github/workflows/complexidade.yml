@@ -1,6 +1,6 @@
 name: Complexidade
 
-# Complexidade ciclomática por método/função. Falha se alguma passar do limite.
+# Complexidade ciclomática por método/função. Falha se algum passar do limite.
 # O lizard também analisa TypeScript, por isso serve para os frontends (fases 6 e 7).
 
 on:
@@ -26,23 +26,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # -w mostra só os métodos acima do limite e devolve erro se houver algum.
+      # Corre num contentor Python para ser igual no GitHub e no act.
+      # --warnings_only mostra só os métodos acima do limite e devolve erro se houver algum.
       - name: Métodos acima do limite
         run: |
-          pipx run "lizard==${LIZARD_VERSAO}" backend/src \
-            --languages csharp \
-            --CCN "$COMPLEXIDADE_MAXIMA" \
-            --exclude "*/Migracoes/*" --exclude "*/obj/*" --exclude "*/bin/*" \
-            --warnings_only
-      - name: Resumo
-        if: always()
-        run: |
-          {
-            echo '### Complexidade ciclomática (máximo '"$COMPLEXIDADE_MAXIMA"')'
-            echo '```'
-            pipx run "lizard==${LIZARD_VERSAO}" backend/src \
-              --languages csharp \
-              --exclude "*/Migracoes/*" --exclude "*/obj/*" --exclude "*/bin/*" \
-              --sort cyclomatic_complexity | tail -n 15
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          docker run --rm -v "$PWD:/repo" -w /repo python:3.13-slim sh -c "
+            pip install -q --root-user-action=ignore lizard==${LIZARD_VERSAO} &&
+            lizard backend/src --languages csharp --CCN ${COMPLEXIDADE_MAXIMA} \
+              --exclude '*/Migracoes/*' --exclude '*/obj/*' --exclude '*/bin/*' \
+              --warnings_only"

@@ -47,6 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # O shellcheck vem instalado nos runners ubuntu.
       - name: shellcheck
-        run: find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 --no-run-if-empty shellcheck
+        run: |
+          find . -name '*.sh' -not -path './.git/*' -print0 \
+            | xargs -0 --no-run-if-empty docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.11.0

@@ -20,6 +20,8 @@ concurrency:
 
 jobs:
   codeql:
+    # Precisa da API do GitHub; não corre localmente (act).
+    if: ${{ !github.event.act }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,7 +56,8 @@ jobs:
 
   dependencias:
     # Bloqueia o PR se introduzir uma dependência com vulnerabilidade alta ou crítica.
-    if: github.event_name == 'pull_request'
+    # Precisa da API do GitHub; não corre localmente (act).
+    if: ${{ github.event_name == 'pull_request' && !github.event.act }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -73,4 +76,4 @@ jobs:
         with:
           persist-credentials: false
       - name: zizmor
-        run: pipx run zizmor==1.32.0 --offline .github/workflows
+        run: docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/zizmorcore/zizmor:1.32.0 --offline .github/workflows

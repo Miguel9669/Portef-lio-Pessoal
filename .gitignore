@@ -29,3 +29,6 @@ backend/**/armazenamento/
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+
+# CI local (ci.sh)
+.ci-local/
