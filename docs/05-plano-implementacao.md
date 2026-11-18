@@ -126,11 +126,12 @@ Envio de imagens dos projetos e a timeline com os commits do GitHub.
 
 Os endpoints de `/api/publico`, só de leitura.
 
-- [ ] `SitePublicoService` sobre o `PublicoDbContext`
-- [ ] Blocos públicos por ordem, com o HTML já gerado (RF05)
-- [ ] Projetos públicos, projeto por slug e timeline de commits (RF09, RF12)
-- [ ] `GET /imagens/{ficheiro}`: só serve imagens de projetos públicos, com `nosniff` (SEG16, SEG20)
-- [ ] Testes: nada de um projeto não público (projeto, imagens ou timeline) aparece em nenhum endpoint público
+- [x] `SitePublicoService` sobre o `PublicoDbContext`
+- [x] Blocos públicos por ordem, com o HTML já gerado (RF05)
+- [x] Projetos públicos, projeto por slug e timeline de commits (RF09, RF12)
+- [x] `GET /imagens/{ficheiro}`: só serve imagens de projetos públicos, com `nosniff` (SEG16, SEG20)
+- [x] Rate limit geral do site público: 100 pedidos por minuto por IP (`SitePublico:PedidosPorMinutoPorIp`)
+- [x] Testes: nada de um projeto não público (projeto, imagens ou timeline) aparece em nenhum endpoint público
 
 **Concluída quando:** todos os endpoints públicos respondem sem login e o teste de projetos não públicos passa.
 
@@ -177,7 +178,7 @@ Fica para depois da v1 local ([decisão de alojamento](01-requisitos.md)).
 - [ ] VPS com nginx e HTTPS (Let's Encrypt) e HSTS
 - [ ] API e Next.js como processos (systemd ou Docker) atrás do nginx; backoffice como ficheiros estáticos
 - [ ] Domínios: site, `admin.` para o backoffice, `/api` encaminhado para a API
-- [ ] IP real do visitante enviado à API (`ForwardedHeaders`) e rate limit do site no nginx (SEG06)
+- [ ] IP real do visitante enviado à API (`ForwardedHeaders`), também nas imagens que passam pelo `rewrite` do Next.js; sem isto, o rate limit por IP vê todos os pedidos a vir do proxy (SEG06)
 - [ ] Segredos em variáveis de ambiente no servidor (SEG25)
 - [ ] Migrações aplicadas no deploy com `portfolio_migracoes`
 - [ ] Cópias de segurança diárias da base de dados e da pasta das imagens

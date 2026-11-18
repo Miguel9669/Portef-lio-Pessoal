@@ -39,6 +39,7 @@ public sealed class FabricaApi(
                 // Todos os pedidos dos testes vêm do mesmo "IP"; o rate limit tem testes próprios.
                 ["Autenticacao:LoginsPorIp"] = "1000",
                 ["Autenticacao:CodigosPorIp"] = "1000",
+                ["SitePublico:PedidosPorMinutoPorIp"] = "1000",
                 ["Imagens:Pasta"] = PastaImagens,
             });
             if (configuracao is not null)

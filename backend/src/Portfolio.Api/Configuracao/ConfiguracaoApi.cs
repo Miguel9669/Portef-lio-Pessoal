@@ -1,10 +1,14 @@
 using System.Text.Json;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using Portfolio.Api.Autenticacao;
+using Portfolio.Api.SitePublico;
 using Portfolio.Core.Conteudo;
 using Portfolio.Core.Imagens;
 using Portfolio.Core.Projetos;
+using Portfolio.Core.SitePublico;
 using Portfolio.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -22,6 +26,8 @@ public static class ConfiguracaoApi
         services.AddScoped<ImagemService>();
         services.AddScoped<TimelineService>();
         services.AddSingleton<CacheTimeline>();
+        services.AddScoped<SitePublicoService>();
+        AddLimitePublico(services, configuracao);
 
         // SEG11: token CSRF obrigatório em todos os pedidos de escrita (POST, PUT, DELETE).
         services.AddControllers(o => o.Filters.Add<FiltroCsrf>())
@@ -75,6 +81,21 @@ public static class ConfiguracaoApi
         app.MapControllers();
         return app;
     }
+
+    // Rate limit geral do site público, por IP. Atrás de um proxy (nginx, Next.js) é preciso
+    // configurar ForwardedHeaders (fase 9), senão todos os pedidos parecem vir do proxy.
+    private static void AddLimitePublico(IServiceCollection services, IConfiguration configuracao) =>
+        services.Configure<RateLimiterOptions>(o => o.AddPolicy(LimitePublico.Politica, contexto =>
+        {
+            var limite = configuracao.GetSection("SitePublico").Get<LimitePublico>() ?? new LimitePublico();
+            var ip = contexto.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
+            return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = limite.PedidosPorMinutoPorIp,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }));
 
     // Chaves usadas para cifrar o cookie de sessão e o segredo do 2FA (SEG09). Em produção ficam
     // numa pasta própria (DataProtection:PastaChaves), fora da base de dados e da pasta da aplicação.
