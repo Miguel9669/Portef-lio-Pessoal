@@ -1,8 +1,8 @@
 using System.Text.Json;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Portfolio.Api.Autenticacao;
 using Portfolio.Api.SitePublico;
 using Portfolio.Core.Conteudo;
