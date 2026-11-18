@@ -112,6 +112,20 @@ dotnet user-secrets set "Github:Token" "github_pat_..."
 
 Com um token com acesso a repositórios privados, um projeto público mostra as mensagens dos commits desse repositório a toda a gente ([SEG29](docs/03-seguranca.md)).
 
+### 7. Backoffice
+
+Precisa do [Node.js 22](https://nodejs.org/) e da API a correr (passo 4).
+
+```bash
+cd frontend/backoffice
+npm ci
+npm run dev
+```
+
+Abre em `http://localhost:5173`. O Vite reencaminha `/api` para a API (`http://localhost:5079`, ou `API_URL`), por isso o browser vê tudo no mesmo endereço e o cookie de sessão funciona como em produção.
+
+As dependências estão com versões exatas e sem scripts de instalação (`.npmrc`). Para acrescentar uma, usar uma versão com pelo menos duas semanas: `npm install --before=AAAA-MM-DD pacote`.
+
 ### Testes
 
 ```bash
@@ -121,6 +135,14 @@ dotnet test
 
 Os testes da base de dados arrancam um PostgreSQL num contentor (Testcontainers), com o mesmo script de arranque do `docker-compose`. Sem Docker, são ignorados localmente; no CI falham.
 
+Backoffice (Vitest, com a API simulada):
+
+```bash
+cd frontend/backoffice
+npm test                # ou npm run test:coverage
+npm run lint && npm run typecheck
+```
+
 ## CI
 
 Os workflows estão em `.github/workflows/` e correm em cada pull request e em cada push para `main`, `stage` e `dev`:
@@ -128,7 +150,8 @@ Os workflows estão em `.github/workflows/` e correm em cada pull request e em c
 | Workflow | Verifica | Falha quando |
 | --- | --- | --- |
 | Backend | Build, migrações em dia, testes com cobertura, permissões da base de dados | Cobertura de linhas abaixo de 80% |
-| Complexidade | Complexidade ciclomática (lizard) | Um método passa de 10 |
+| Backoffice | ESLint, tipos, testes com cobertura, build, `npm audit` das dependências de produção | Cobertura de linhas abaixo de 80%, ou vulnerabilidade alta |
+| Complexidade | Complexidade ciclomática (lizard), em C#, TypeScript e TSX | Um método ou função passa de 10 |
 | Sintaxe | `dotnet format`, actionlint, shellcheck | Erros de formatação, nos workflows ou nos scripts |
 | Segurança | CodeQL, gitleaks, dependency review, zizmor | Vulnerabilidade, segredo ou dependência vulnerável |
 | Trivy | Repositório e imagens Docker | Vulnerabilidade HIGH ou CRITICAL com correção |

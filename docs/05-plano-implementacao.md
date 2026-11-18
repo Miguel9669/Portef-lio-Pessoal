@@ -139,13 +139,14 @@ Os endpoints de `/api/publico`, só de leitura.
 
 Aplicação Vite + React + TypeScript + Tailwind + shadcn/ui em `frontend/backoffice`.
 
-- [ ] Projeto Vite com Tailwind, shadcn/ui, React Router e TanStack Query; proxy de `/api` para a API
-- [ ] Login, código 2FA e configuração do 2FA na primeira vez (QR code e códigos de recuperação)
-- [ ] Rotas protegidas: sem sessão, volta ao login
-- [ ] Blocos: lista com arrastar para reordenar (dnd-kit), mostrar ou ocultar, editor de Markdown com pré-visualização
-- [ ] Projetos: lista, criar, editar (com o link do GitHub), publicar, remover com confirmação, imagens do projeto
-- [ ] Timeline: commits do projeto, cada um com link para o GitHub; mensagens mostradas como texto (SEG29)
-- [ ] Formulários com React Hook Form + Zod e mensagens de erro da API
+- [x] Projeto Vite com Tailwind, shadcn/ui, React Router e TanStack Query; proxy de `/api` para a API
+- [x] Login, código 2FA e configuração do 2FA na primeira vez (QR code e códigos de recuperação)
+- [x] Rotas protegidas: sem sessão, volta ao login
+- [x] Blocos: lista com arrastar para reordenar (dnd-kit), mostrar ou ocultar, editor de Markdown com pré-visualização
+- [x] Projetos: lista, criar, editar (com o link do GitHub), publicar, remover com confirmação, imagens do projeto
+- [x] Timeline: commits do projeto, cada um com link para o GitHub; mensagens mostradas como texto (SEG29)
+- [x] Formulários com React Hook Form + Zod e mensagens de erro da API
+- [x] CI do frontend: ESLint, tipos, testes com cobertura mínima de 80%, build, `npm audit` e CodeQL para TypeScript
 
 **Concluída quando:** todo o conteúdo do site pode ser gerido no backoffice, sem usar a página de documentação da API.
 

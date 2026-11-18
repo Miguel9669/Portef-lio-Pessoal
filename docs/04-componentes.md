@@ -36,7 +36,7 @@ flowchart LR
 | --- | --- | --- |
 | Frontend | React + TypeScript | Base dos dois frontends |
 | Frontend | Tailwind CSS | Estilos |
-| Frontend | shadcn/ui | Componentes (botões, formulários, diálogos, tabelas) |
+| Frontend | shadcn/ui | Componentes (botões, formulários, diálogos, tabelas); no backoffice estão em `src/components/ui`, escritos à mão no estilo do shadcn/ui sobre o Radix, para não depender da CLI |
 | Site público | Next.js (App Router) | Páginas geradas no servidor: pré-visualizações de links (LinkedIn, WhatsApp) e SEO |
 | Backoffice | Vite | Build da aplicação; não precisa de SEO, está atrás de login |
 | Backoffice | React Router | Navegação entre páginas |
