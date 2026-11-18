@@ -21,6 +21,13 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
+      - name: Migrações em dia com o modelo
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --no-build --configuration Release \
+            --project src/Portfolio.Infrastructure --startup-project src/Portfolio.Infrastructure \
+            --context BackofficeDbContext
+      # Inclui os testes da base de dados (Testcontainers); no CI falham se não houver Docker.
       - run: dotnet test --no-build --configuration Release
 
   base-de-dados:

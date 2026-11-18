@@ -13,7 +13,7 @@ public class ArranqueTests
         await using var fabrica = CriarFabrica("Development");
         using var cliente = fabrica.CreateClient();
 
-        var resposta = await cliente.GetAsync("/openapi/v1.json");
+        var resposta = await cliente.GetAsync("/openapi/v1.json", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
     }
@@ -24,7 +24,7 @@ public class ArranqueTests
         await using var fabrica = CriarFabrica("Production");
         using var cliente = fabrica.CreateClient();
 
-        var resposta = await cliente.GetAsync("/openapi/v1.json");
+        var resposta = await cliente.GetAsync("/openapi/v1.json", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, resposta.StatusCode);
     }
