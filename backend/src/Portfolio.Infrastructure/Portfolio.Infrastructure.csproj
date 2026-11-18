@@ -13,6 +13,9 @@
     <PackageReference Include="QRCoder" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="HtmlSanitizer" />
+    <PackageReference Include="SkiaSharp" />
+    <!-- Biblioteca nativa para Linux sem depender do fontconfig (funciona em contentores mínimos). -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>

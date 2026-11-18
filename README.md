@@ -99,6 +99,19 @@ O segredo do 2FA fica cifrado com chaves da Data Protection API, fora da base de
 
 Os valores do login (bloqueio, sessão, rate limit) estão na secção `Autenticacao` do `appsettings.json`.
 
+### 6. Imagens e timeline do GitHub
+
+As imagens dos projetos ficam em `backend/src/Portfolio.Api/armazenamento/imagens` (fora do Git), ou na pasta definida em `Imagens__Pasta`.
+
+A timeline de cada projeto são os commits do seu repositório no GitHub, lidos pela API e guardados 10 minutos em cache. Sem token, o GitHub aceita 60 pedidos por hora; com um token (*fine-grained*, só leitura de conteúdos) passa a 5000:
+
+```bash
+cd backend/src/Portfolio.Api
+dotnet user-secrets set "Github:Token" "github_pat_..."
+```
+
+Com um token com acesso a repositórios privados, um projeto público mostra as mensagens dos commits desse repositório a toda a gente ([SEG29](docs/03-seguranca.md)).
+
 ### Testes
 
 ```bash

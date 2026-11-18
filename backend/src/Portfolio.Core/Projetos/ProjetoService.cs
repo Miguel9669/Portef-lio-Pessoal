@@ -1,12 +1,15 @@
 using Portfolio.Core.Comum;
 using Portfolio.Core.Entidades;
+using Portfolio.Core.Imagens;
 
 namespace Portfolio.Core.Projetos;
 
 public interface IRepositorioProjetos
 {
-    // Do mais recente para o mais antigo.
+    // Do mais recente para o mais antigo, com as imagens.
     Task<List<Projeto>> ListarAsync(CancellationToken ct);
+
+    // Com as imagens, por ordem.
     Task<Projeto?> ObterAsync(int id, CancellationToken ct);
     Task<List<string>> SlugsComecadosPorAsync(string inicio, CancellationToken ct);
     void Adicionar(Projeto projeto);
@@ -17,7 +20,7 @@ public interface IRepositorioProjetos
 public sealed record DadosProjeto(string Nome, string? Descricao, string? RepositorioGithub);
 
 // Projetos no backoffice (RF06–RF08, RF10).
-public sealed class ProjetoService(IRepositorioProjetos projetos)
+public sealed class ProjetoService(IRepositorioProjetos projetos, IArmazenamentoImagens armazenamento)
 {
     private const string LinkInvalido = "Tem de ser o link de um repositório do GitHub, por exemplo https://github.com/dono/repositorio.";
 
@@ -73,15 +76,18 @@ public sealed class ProjetoService(IRepositorioProjetos projetos)
         return projeto;
     }
 
-    // RF07: as imagens são apagadas em cascata pela base de dados.
+    // RF07: as linhas das imagens saem em cascata na base de dados; os ficheiros são apagados
+    // só depois disso ter sucesso, para nunca ficar uma imagem na base de dados sem ficheiro.
     public async Task<Erro?> RemoverAsync(int id, CancellationToken ct)
     {
         var projeto = await projetos.ObterAsync(id, ct);
         if (projeto is null)
             return NaoEncontrado();
 
+        var ficheiros = projeto.Imagens.Select(i => i.Ficheiro).ToList();
         projetos.Remover(projeto);
         await projetos.GravarAsync(ct);
+        ficheiros.ForEach(armazenamento.Apagar);
         return null;
     }
 

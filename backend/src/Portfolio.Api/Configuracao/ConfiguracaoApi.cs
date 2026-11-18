@@ -1,6 +1,9 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using Portfolio.Api.Autenticacao;
 using Portfolio.Core.Conteudo;
+using Portfolio.Core.Imagens;
 using Portfolio.Core.Projetos;
 using Portfolio.Infrastructure;
 using Scalar.AspNetCore;
@@ -16,9 +19,13 @@ public static class ConfiguracaoApi
         services.AddAutenticacao(configuracao);
         services.AddScoped<BlocoConteudoService>();
         services.AddScoped<ProjetoService>();
+        services.AddScoped<ImagemService>();
+        services.AddScoped<TimelineService>();
+        services.AddSingleton<CacheTimeline>();
 
         // SEG11: token CSRF obrigatório em todos os pedidos de escrita (POST, PUT, DELETE).
-        services.AddControllers(o => o.Filters.Add<FiltroCsrf>());
+        services.AddControllers(o => o.Filters.Add<FiltroCsrf>())
+            .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
         services.AddOpenApi();
 
         // SEG26: erros em ProblemDetails, sem stack traces fora de desenvolvimento.

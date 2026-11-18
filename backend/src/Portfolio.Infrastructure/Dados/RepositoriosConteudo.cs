@@ -27,10 +27,11 @@ public sealed class RepositorioBlocos(BackofficeDbContext bd) : IRepositorioBloc
 public sealed class RepositorioProjetos(BackofficeDbContext bd) : IRepositorioProjetos
 {
     public Task<List<Projeto>> ListarAsync(CancellationToken ct) =>
-        bd.Projetos.OrderByDescending(p => p.CriadoEm).ThenByDescending(p => p.Id).ToListAsync(ct);
+        bd.Projetos.Include(p => p.Imagens.OrderBy(i => i.Ordem))
+            .OrderByDescending(p => p.CriadoEm).ThenByDescending(p => p.Id).ToListAsync(ct);
 
     public Task<Projeto?> ObterAsync(int id, CancellationToken ct) =>
-        bd.Projetos.SingleOrDefaultAsync(p => p.Id == id, ct);
+        bd.Projetos.Include(p => p.Imagens.OrderBy(i => i.Ordem)).SingleOrDefaultAsync(p => p.Id == id, ct);
 
     public Task<List<string>> SlugsComecadosPorAsync(string inicio, CancellationToken ct) =>
         bd.Projetos.Where(p => p.Slug.StartsWith(inicio)).Select(p => p.Slug).ToListAsync(ct);
@@ -38,6 +39,21 @@ public sealed class RepositorioProjetos(BackofficeDbContext bd) : IRepositorioPr
     public void Adicionar(Projeto projeto) => bd.Projetos.Add(projeto);
 
     public void Remover(Projeto projeto) => bd.Projetos.Remove(projeto);
+
+    public Task GravarAsync(CancellationToken ct) => bd.SaveChangesAsync(ct);
+}
+
+public sealed class RepositorioImagens(BackofficeDbContext bd) : Core.Imagens.IRepositorioImagens
+{
+    public Task<ImagemProjeto?> ObterAsync(int id, CancellationToken ct) =>
+        bd.ImagensProjeto.SingleOrDefaultAsync(i => i.Id == id, ct);
+
+    public Task<List<ImagemProjeto>> ListarDoProjetoAsync(int projetoId, CancellationToken ct) =>
+        bd.ImagensProjeto.Where(i => i.ProjetoId == projetoId).OrderBy(i => i.Ordem).ThenBy(i => i.Id).ToListAsync(ct);
+
+    public void Adicionar(ImagemProjeto imagem) => bd.ImagensProjeto.Add(imagem);
+
+    public void Remover(ImagemProjeto imagem) => bd.ImagensProjeto.Remove(imagem);
 
     public Task GravarAsync(CancellationToken ct) => bd.SaveChangesAsync(ct);
 }

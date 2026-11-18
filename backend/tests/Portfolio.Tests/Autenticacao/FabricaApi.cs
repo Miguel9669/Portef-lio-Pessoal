@@ -13,13 +13,19 @@ using Portfolio.Tests.BaseDeDados;
 namespace Portfolio.Tests.Autenticacao;
 
 // A API completa, ligada ao PostgreSQL do Testcontainers, com um relógio que os testes controlam.
-public sealed class FabricaApi(PostgresFixture bd, Dictionary<string, string?>? configuracao = null)
+public sealed class FabricaApi(
+    PostgresFixture bd,
+    Dictionary<string, string?>? configuracao = null,
+    Action<IServiceCollection>? servicos = null)
     : WebApplicationFactory<Program>
 {
     public const string Email = "admin@exemplo.pt";
     public const string Password = "uma-password-comprida";
 
     public FakeTimeProvider Relogio { get; } = new(DateTimeOffset.UtcNow);
+
+    // Cada fábrica guarda as imagens numa pasta temporária própria, apagada no fim.
+    public string PastaImagens { get; } = Path.Combine(Path.GetTempPath(), "portfolio-testes", Guid.NewGuid().ToString("N"));
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -33,6 +39,7 @@ public sealed class FabricaApi(PostgresFixture bd, Dictionary<string, string?>? 
                 // Todos os pedidos dos testes vêm do mesmo "IP"; o rate limit tem testes próprios.
                 ["Autenticacao:LoginsPorIp"] = "1000",
                 ["Autenticacao:CodigosPorIp"] = "1000",
+                ["Imagens:Pasta"] = PastaImagens,
             });
             if (configuracao is not null)
                 c.AddInMemoryCollection(configuracao);
@@ -42,7 +49,15 @@ public sealed class FabricaApi(PostgresFixture bd, Dictionary<string, string?>? 
             s.RemoveAll<TimeProvider>();
             s.AddSingleton<TimeProvider>(Relogio);
             s.AddDataProtection().UseEphemeralDataProtectionProvider();
+            servicos?.Invoke(s);
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (Directory.Exists(PastaImagens))
+            Directory.Delete(PastaImagens, recursive: true);
     }
 
     public ClienteTeste NovoCliente() => new(CreateClient(new WebApplicationFactoryClientOptions
@@ -107,7 +122,7 @@ public sealed class ClienteTeste(HttpClient http)
     {
         using var pedido = new HttpRequestMessage(metodo, url);
         if (corpo is not null)
-            pedido.Content = JsonContent.Create(corpo);
+            pedido.Content = corpo as HttpContent ?? JsonContent.Create(corpo);
         if (Cookies.Count > 0)
             pedido.Headers.Add("Cookie", string.Join("; ", Cookies.Select(c => $"{c.Key}={c.Value}")));
         if (comCsrf && Cookies.TryGetValue("XSRF-TOKEN", out var csrf))
