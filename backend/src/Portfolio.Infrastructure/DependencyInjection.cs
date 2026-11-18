@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Portfolio.Core.Autenticacao;
+using Portfolio.Infrastructure.Autenticacao;
 using Portfolio.Infrastructure.Dados;
 
 namespace Portfolio.Infrastructure;
@@ -16,6 +18,12 @@ public static class DependencyInjection
 
         services.AddDbContext<PublicoDbContext>(o =>
             o.UseNpgsql(ObterConnectionString(configuracao, "Leitura")));
+
+        // Autenticação. A cifra precisa da Data Protection API, configurada na API.
+        services.AddScoped<IRepositorioUtilizador, RepositorioUtilizador>();
+        services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
+        services.AddSingleton<ITotp, TotpOtpNet>();
+        services.AddSingleton<ICifraSegredos, CifraDataProtection>();
 
         return services;
     }

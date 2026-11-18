@@ -2,7 +2,15 @@
 
   <!-- DbContexts, migrações e implementações das interfaces do Core. -->
 
+  <!-- Data Protection API, para cifrar o segredo do 2FA (SEG09). -->
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+    <PackageReference Include="Otp.NET" />
+    <PackageReference Include="QRCoder" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>

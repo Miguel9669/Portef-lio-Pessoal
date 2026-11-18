@@ -1,6 +1,6 @@
-using Portfolio.Infrastructure;
+using Portfolio.Api.Comandos;
+using Portfolio.Api.Configuracao;
 using Portfolio.Infrastructure.Dados;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,27 +10,17 @@ if (args is ["migrar", ..])
 {
     await AplicadorMigracoes.AplicarAsync(builder.Configuration);
     Console.WriteLine("Migrações aplicadas.");
-    return;
+    return 0;
 }
 
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddPortfolioApi(builder.Configuration);
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    // Documentação da API, só em desenvolvimento:
-    // /openapi/v1.json (especificação) e /scalar (página para testar os endpoints).
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+// Comandos de linha: dotnet run -- criar-admin | repor-password (SEG08)
+if (args is [var comando, ..] && ComandosConta.Reconhece(comando))
+    return await ComandosConta.ExecutarAsync(comando, app.Services, new ConsolaSistema(), CancellationToken.None);
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
+app.UsePortfolioApi();
 app.Run();
+return 0;

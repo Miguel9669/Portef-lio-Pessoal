@@ -60,34 +60,34 @@ As 7 tabelas de [02-base-de-dados.md](02-base-de-dados.md).
 Login com 2FA e toda a proteção do backoffice. Vem antes das funcionalidades para que nenhum endpoint de escrita exista sem proteção.
 
 **Conta**
-- [ ] `IPasswordHasher` com Argon2id (RNF01)
-- [ ] Comando `criar-admin`, só se ainda não existir conta; password pedida sem aparecer no ecrã (SEG08)
-- [ ] Comando `repor-password`: nova password, desativa o 2FA, apaga os códigos de recuperação, muda o `SecurityStamp`, limpa o bloqueio (SEG08)
+- [x] `IPasswordHasher` com Argon2id (RNF01)
+- [x] Comando `criar-admin`, só se ainda não existir conta; password pedida sem aparecer no ecrã (SEG08)
+- [x] Comando `repor-password`: nova password, desativa o 2FA, apaga os códigos de recuperação, muda o `SecurityStamp`, limpa o bloqueio (SEG08)
 
 **Login**
-- [ ] `POST /auth/login`: mensagem genérica (SEG04) e tempo igual com um hash falso (SEG05)
-- [ ] Cookie de sessão `HttpOnly`, `Secure`, `SameSite=Strict` (SEG10); sessão parcial até ao 2FA
-- [ ] Bloqueio progressivo por conta (`TentativasFalhadas`, `BloqueadoAte`) e rate limit por IP (SEG06)
-- [ ] Expiração da sessão (30 min sem atividade, 8 h no máximo) e validação do `SecurityStamp` (SEG12)
-- [ ] `POST /auth/logout` e `GET /auth/eu` (RF03)
+- [x] `POST /auth/login`: mensagem genérica (SEG04) e tempo igual com um hash falso (SEG05)
+- [x] Cookie de sessão `HttpOnly`, `Secure`, `SameSite=Strict` (SEG10); sessão parcial até ao 2FA
+- [x] Bloqueio progressivo por conta (`TentativasFalhadas`, `BloqueadoAte`) e rate limit por IP (SEG06)
+- [x] Expiração da sessão (30 min sem atividade, 8 h no máximo) e validação do `SecurityStamp` (SEG12)
+- [x] `POST /auth/logout` e `GET /auth/eu` (RF03)
 
 **2FA** (SEG09)
-- [ ] `POST /auth/2fa/configurar`: segredo cifrado com a Data Protection API e QR code
-- [ ] `POST /auth/2fa/ativar`: confirma o primeiro código e devolve 10 códigos de recuperação (guardados como hash)
-- [ ] `POST /auth/2fa`: valida o código TOTP ou de recuperação; recusa códigos reutilizados (`TotpUltimoPasso`); com rate limit
+- [x] `POST /auth/2fa/configurar`: segredo cifrado com a Data Protection API e QR code
+- [x] `POST /auth/2fa/ativar`: confirma o primeiro código e devolve 10 códigos de recuperação (guardados como hash)
+- [x] `POST /auth/2fa`: valida o código TOTP ou de recuperação; recusa códigos reutilizados (`TotpUltimoPasso`); com rate limit
 
 **Proteção geral**
-- [ ] `FallbackPolicy`: tudo exige login; os endpoints públicos são abertos com `[AllowAnonymous]` (SEG13)
-- [ ] Antiforgery token nos pedidos de escrita (SEG11)
-- [ ] Cabeçalhos de segurança, HSTS e CORS restrito (SEG22–SEG24)
-- [ ] Erros em ProblemDetails, sem detalhes em produção (SEG26)
-- [ ] Registo dos logins, sem passwords (SEG27)
+- [x] `FallbackPolicy`: tudo exige login; os endpoints públicos são abertos com `[AllowAnonymous]` (SEG13)
+- [x] Antiforgery token nos pedidos de escrita (SEG11)
+- [x] Cabeçalhos de segurança, HSTS e CORS restrito (SEG22–SEG24)
+- [x] Erros em ProblemDetails, sem detalhes em produção (SEG26)
+- [x] Registo dos logins, sem passwords (SEG27)
 
 **Testes**
-- [ ] Login certo, password errada e email inexistente devolvem a mesma resposta
-- [ ] Sem 2FA, a sessão parcial não acede a nenhum endpoint do backoffice
-- [ ] Bloqueio depois de 5 falhas; código 2FA reutilizado é recusado
-- [ ] `repor-password` termina as sessões abertas
+- [x] Login certo, password errada e email inexistente devolvem a mesma resposta
+- [x] Sem 2FA, a sessão parcial não acede a nenhum endpoint do backoffice
+- [x] Bloqueio depois de 5 falhas; código 2FA reutilizado é recusado
+- [x] `repor-password` termina as sessões abertas
 
 **Concluída quando:** só se consegue chamar um endpoint do backoffice depois da password e do código 2FA, e todos os testes acima passam.
 
