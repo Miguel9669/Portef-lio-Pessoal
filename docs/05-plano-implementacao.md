@@ -45,13 +45,13 @@ Estrutura do repositório e ambiente de desenvolvimento.
 
 As 7 tabelas de [02-base-de-dados.md](02-base-de-dados.md).
 
-- [ ] Entidades e enums em `Portfolio.Core`
-- [ ] Configuração das tabelas (tamanhos, índices, FKs com cascata) partilhada pelos dois DbContexts
-- [ ] Email em `citext`, com a extensão ativada na migração
-- [ ] Restrição `CHECK (Id = 1)` no Utilizador (só uma conta)
-- [ ] `BackofficeDbContext` (escrita) e `PublicoDbContext` (só leitura; `SaveChanges` lança exceção) (SEG02)
-- [ ] Migração inicial, aplicada com `portfolio_migracoes`
-- [ ] Testes: aplicar as migrações num PostgreSQL de teste (Testcontainers); confirmar que o utilizador de leitura não consegue escrever
+- [x] Entidades e enums em `Portfolio.Core`
+- [x] Configuração das tabelas (tamanhos, índices, FKs com cascata) partilhada pelos dois DbContexts
+- [x] Email em `citext`, com a extensão ativada na migração
+- [x] Restrição `CHECK (Id = 1)` no Utilizador (só uma conta)
+- [x] `BackofficeDbContext` (escrita) e `PublicoDbContext` (só leitura; `SaveChanges` lança exceção) (SEG02)
+- [x] Migração inicial, aplicada com `portfolio_migracoes`
+- [x] Testes: aplicar as migrações num PostgreSQL de teste (Testcontainers); confirmar que o utilizador de leitura não consegue escrever
 
 **Concluída quando:** a migração cria as 7 tabelas, e os testes confirmam a restrição de uma só conta e as permissões dos utilizadores.
 

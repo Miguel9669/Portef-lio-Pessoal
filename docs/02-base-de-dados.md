@@ -95,7 +95,7 @@ O utilizador do backoffice. Só pode existir um (RF02).
 
 | Campo | Tipo | Nulo | Regras |
 | --- | --- | --- | --- |
-| Id | integer | não | Chave primária, `GENERATED ALWAYS AS IDENTITY` |
+| Id | integer | não | Chave primária; sempre 1, não é gerado pela base de dados |
 | Nome | varchar(150) | não | Nome a mostrar no backoffice |
 | Email | citext | não | Único, sem distinguir maiúsculas; é o que se usa no login |
 | PasswordHash | varchar(255) | não | Argon2id em formato PHC: o salt e os parâmetros vão dentro da string (RNF01) |
@@ -109,7 +109,9 @@ O utilizador do backoffice. Só pode existir um (RF02).
 
 Os campos a partir de `SecurityStamp` vêm do [documento de segurança](03-seguranca.md); não fazem parte da definição original do Utilizador.
 
-**Só um utilizador.** É garantido na própria base de dados com uma restrição `CHECK (Id = 1)`: a única linha possível é a de `Id` 1, por isso um segundo `INSERT` é sempre recusado. Assim, mesmo que a aplicação falhe, a base de dados não aceita uma segunda conta.
+**Só um utilizador.** É garantido na própria base de dados: o `Id` é sempre 1, por isso um segundo utilizador é recusado pela chave primária, e uma restrição `CHECK (Id = 1)` impede qualquer outro valor. Assim, mesmo que a aplicação falhe, a base de dados não aceita uma segunda conta.
+
+O `Id` não é identity de propósito: com uma sequência, um `INSERT` que falhasse gastava o número 1, e a conta nunca mais podia ser criada.
 
 O utilizador é criado pelo comando de configuração inicial ([SEG08](03-seguranca.md)), nunca por um endpoint.
 

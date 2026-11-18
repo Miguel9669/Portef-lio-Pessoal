@@ -48,7 +48,26 @@ dotnet user-secrets set "ConnectionStrings:Escrita"   "Host=localhost;Database=p
 dotnet user-secrets set "ConnectionStrings:Migracoes" "Host=localhost;Database=portfolio;Username=portfolio_migracoes;Password=..."
 ```
 
-### 3. API
+### 3. Migrações
+
+Criam as tabelas, com o utilizador `portfolio_migracoes`:
+
+```bash
+cd backend
+dotnet run --project src/Portfolio.Api -- migrar
+```
+
+Depois de alterar uma entidade ou a configuração de uma tabela, gera-se uma nova migração:
+
+```bash
+cd backend
+dotnet tool restore
+dotnet ef migrations add NomeDaAlteracao \
+  --project src/Portfolio.Infrastructure --startup-project src/Portfolio.Infrastructure \
+  --context BackofficeDbContext --output-dir Dados/Migracoes
+```
+
+### 4. API
 
 ```bash
 cd backend
@@ -63,3 +82,5 @@ A página para testar os endpoints fica em `http://localhost:5079/scalar` (só e
 cd backend
 dotnet test
 ```
+
+Os testes da base de dados arrancam um PostgreSQL num contentor (Testcontainers), com o mesmo script de arranque do `docker-compose`. Sem Docker, são ignorados localmente; no CI falham.
