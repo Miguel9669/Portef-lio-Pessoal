@@ -5,7 +5,7 @@ import { Cabecalho, Rodape, TituloSecao, ligacoesDoMenu } from '@/componentes/Es
 import { SetaEsquerda } from '@/componentes/Icones'
 import { BotaoGithub, Galeria, TimelineCommits } from '@/componentes/Projeto'
 import { api, nomeSite, ouIndisponivel } from '@/lib/api'
-import { textoSimples } from '@/lib/texto'
+import { resumir } from '@/lib/texto'
 
 // Tem de ser um número escrito aqui (o Next.js lê-o sem executar o código); o teste garante
 // que é igual a REVALIDAR_SEGUNDOS.
@@ -19,7 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const projeto = await ouIndisponivel(api.projeto(slug))
   if (!projeto || projeto === 'indisponivel') return { title: 'Projeto' }
 
-  const descricao = projeto.descricao ? textoSimples(projeto.descricao) : undefined
+  // A descrição é texto simples (não HTML): só se resume.
+  const descricao = projeto.descricao ? resumir(projeto.descricao) : undefined
   const imagem = projeto.imagens[0]
   return {
     title: projeto.nome,

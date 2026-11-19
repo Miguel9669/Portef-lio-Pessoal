@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import type { Commit } from './api'
-import { agruparPorMes, dataCurta, tempoRelativo, textoSimples } from './texto'
+import { agruparPorMes, dataCurta, resumir, tempoRelativo, textoSimples } from './texto'
 
 const commit = (data: string, mensagem = 'm'): Commit => ({ sha: data, mensagem, autor: 'Ana', data, url: 'https://github.com/x/y/commit/1' })
 
 describe('textoSimples', () => {
-  it('tira as etiquetas e descodifica as entidades', () => {
-    expect(textoSimples('<p>Olá <strong>mundo</strong> &amp; &lt;amigos&gt;</p>\n<p>Fim</p>')).toBe('Olá mundo & <amigos> Fim')
+  it('tira as etiquetas e descodifica as entidades, sem nunca devolver < nem >', () => {
+    expect(textoSimples('<p>Olá <strong>mundo</strong> &amp; &lt;amigos&gt;</p>\n<p>Fim</p>')).toBe('Olá mundo & ‹amigos› Fim')
+  })
+
+  it.each([
+    '<scr<script>ipt>alert(1)</script>',
+    '<<script>script>alert(1)<</script>/script>',
+    '&lt;script&gt;alert(1)&lt;/script&gt;',
+    '&amp;lt;script&amp;gt;',
+    '<img src=x onerror=alert(1)',
+  ])('não deixa restos de etiquetas: %s', (html) => {
+    expect(textoSimples(html)).not.toMatch(/[<>]/)
   })
 
   it('não deixa espaços antes da pontuação a seguir a uma etiqueta', () => {
@@ -15,6 +25,13 @@ describe('textoSimples', () => {
 
   it('corta no máximo com reticências', () => {
     expect(textoSimples(`<p>${'a'.repeat(200)}</p>`, 10)).toBe('aaaaaaaaa…')
+  })
+})
+
+describe('resumir', () => {
+  it('mantém o texto simples tal como está, só junta os espaços e corta', () => {
+    expect(resumir('Uso  List<T>\ne   genéricos')).toBe('Uso List<T> e genéricos')
+    expect(resumir('abcdefghij', 5)).toBe('abcd…')
   })
 })
 

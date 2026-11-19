@@ -1,18 +1,26 @@
 import type { Commit } from './api'
 
-const entidades: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' }
+// &lt; e &gt; passam a ‹ e ›: o texto das meta tags nunca tem < nem >.
+const entidades: Record<string, string> = { '&amp;': '&', '&lt;': '‹', '&gt;': '›', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' }
 
-// Texto simples a partir do HTML da API, para as meta tags (descrição das pré-visualizações).
+// Texto simples (por exemplo a descrição de um projeto): junta os espaços e corta no máximo.
+export function resumir(texto: string, maximo = 160): string {
+  const junto = texto.replace(/\s+/g, ' ').trim()
+  return junto.length <= maximo ? junto : `${junto.slice(0, maximo - 1).trimEnd()}…`
+}
+
+// Texto para as meta tags a partir do HTML dos blocos (já sanitizado pela API).
+// 1. O fim de um parágrafo, título ou item separa as palavras; as etiquetas dentro do texto
+//    (<strong>, <a>…) saem sem deixar espaço, senão "<strong>x</strong>." ficava "x .".
+// 2. Tirar etiquetas com uma expressão regular pode deixar restos ("<scr<script>ipt>"), por isso
+//    remove-se depois qualquer < ou > que tenha sobrado.
+// 3. Só no fim se descodificam as entidades, e nenhuma volta a criar < ou >.
 export function textoSimples(html: string, maximo = 160): string {
-  const texto = html
-    // O fim de um parágrafo, título ou item separa as palavras; as etiquetas dentro do texto
-    // (<strong>, <a>…) saem sem deixar espaço, senão "<strong>x</strong>." ficava "x .".
+  const semEtiquetas = html
     .replace(/<\/(p|h[1-6]|li|blockquote|pre)>|<br\s*\/?>/gi, ' ')
     .replace(/<[^>]*>/g, '')
-    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (e) => entidades[e] ?? e)
-    .replace(/\s+/g, ' ')
-    .trim()
-  return texto.length <= maximo ? texto : `${texto.slice(0, maximo - 1).trimEnd()}…`
+    .replace(/[<>]/g, '')
+  return resumir(semEtiquetas.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (e) => entidades[e] ?? e), maximo)
 }
 
 const formatoMes = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric', timeZone: 'Europe/Lisbon' })
