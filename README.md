@@ -128,6 +128,27 @@ Abre em `http://localhost:5173`. O Vite reencaminha `/api` para a API (`https://
 
 As dependências estão com versões exatas e sem scripts de instalação (`.npmrc`). Para acrescentar uma, usar uma versão com pelo menos duas semanas: `npm install --before=AAAA-MM-DD pacote`.
 
+### 8. Site público
+
+Next.js; precisa da API a correr (passo 4).
+
+```bash
+cd frontend/site
+npm ci
+npm run dev
+```
+
+Abre em `http://localhost:3000`. As páginas são geradas no servidor Next.js, que pede os dados à API (`API_URL`, por defeito `https://localhost:7003`), e ficam em cache 60 segundos: uma alteração no backoffice aparece no site no máximo um minuto depois.
+
+O Next.js confia no certificado de desenvolvimento do .NET através de `NODE_EXTRA_CA_CERTS`. Exportá-lo uma vez (só o certificado público):
+
+```bash
+mkdir -p ~/.aspnet/https
+dotnet dev-certs https -ep ~/.aspnet/https/portfolio-dev.pem --format PEM
+```
+
+Outras variáveis em `frontend/site/.env.example` (`SITE_URL` para os links absolutos das pré-visualizações no LinkedIn e WhatsApp, `SITE_NOME`).
+
 ### Testes
 
 ```bash
