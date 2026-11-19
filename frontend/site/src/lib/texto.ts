@@ -5,7 +5,10 @@ const entidades: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '
 // Texto simples a partir do HTML da API, para as meta tags (descrição das pré-visualizações).
 export function textoSimples(html: string, maximo = 160): string {
   const texto = html
-    .replace(/<[^>]*>/g, ' ')
+    // O fim de um parágrafo, título ou item separa as palavras; as etiquetas dentro do texto
+    // (<strong>, <a>…) saem sem deixar espaço, senão "<strong>x</strong>." ficava "x .".
+    .replace(/<\/(p|h[1-6]|li|blockquote|pre)>|<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
     .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (e) => entidades[e] ?? e)
     .replace(/\s+/g, ' ')
     .trim()

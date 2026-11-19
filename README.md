@@ -158,10 +158,10 @@ dotnet test
 
 Os testes da base de dados arrancam um PostgreSQL num contentor (Testcontainers), com o mesmo script de arranque do `docker-compose`. Sem Docker, são ignorados localmente; no CI falham.
 
-Backoffice (Vitest, com a API simulada):
+Backoffice e site (Vitest, com a API simulada):
 
 ```bash
-cd frontend/backoffice
+cd frontend/backoffice   # ou frontend/site
 npm test                # ou npm run test:coverage
 npm run lint && npm run typecheck
 ```
@@ -174,6 +174,7 @@ Os workflows estão em `.github/workflows/` e correm em cada pull request e em c
 | --- | --- | --- |
 | Backend | Build, migrações em dia, testes com cobertura, permissões da base de dados | Cobertura de linhas abaixo de 80% |
 | Backoffice | ESLint, tipos, testes com cobertura, build, `npm audit` das dependências de produção | Cobertura de linhas abaixo de 80%, ou vulnerabilidade alta |
+| Site | O mesmo que o backoffice, para o site público (o build corre sem API) | Cobertura de linhas abaixo de 80%, ou vulnerabilidade alta |
 | Complexidade | Complexidade ciclomática (lizard), em C#, TypeScript e TSX | Um método ou função passa de 10 |
 | Sintaxe | `dotnet format`, actionlint, shellcheck | Erros de formatação, nos workflows ou nos scripts |
 | Segurança | CodeQL, gitleaks, dependency review, zizmor | Vulnerabilidade, segredo ou dependência vulnerável |

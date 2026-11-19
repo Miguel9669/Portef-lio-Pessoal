@@ -18,7 +18,7 @@ set -euo pipefail
 raiz=$(git rev-parse --show-toplevel)
 cd "$raiz"
 
-predefinidos=(backend backoffice complexidade sintaxe seguranca trivy)
+predefinidos=(backend backoffice site complexidade sintaxe seguranca trivy)
 workflows=("$@")
 [ ${#workflows[@]} -eq 0 ] && workflows=("${predefinidos[@]}")
 
