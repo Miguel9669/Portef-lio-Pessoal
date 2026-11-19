@@ -33,6 +33,28 @@ public class InfraestruturaTests
         Assert.False(resposta.Headers.Contains("Strict-Transport-Security"));
     }
 
+    // Pedidos com um cabeçalho Host que não é o do site são recusados (AllowedHosts).
+    [Theory]
+    [InlineData("portfolio.exemplo", HttpStatusCode.NoContent)]
+    [InlineData("evil.example", HttpStatusCode.BadRequest)]
+    public async Task So_aceita_os_dominios_configurados(string dominio, HttpStatusCode esperado)
+    {
+        await using var fabrica = Fabrica("Production");
+        using var cliente = fabrica.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri($"https://{dominio}") });
+
+        var resposta = await cliente.GetAsync("/api/backoffice/auth/csrf", Ct);
+
+        Assert.Equal(esperado, resposta.StatusCode);
+    }
+
+    [Fact]
+    public void Por_defeito_so_aceita_localhost()
+    {
+        var configuracao = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "appsettings.json"));
+
+        Assert.Contains("\"AllowedHosts\": \"localhost\"", configuracao);
+    }
+
     // SEG24: só os frontends configurados (Cors:Origens) podem fazer pedidos com credenciais.
     [Theory]
     [InlineData("http://localhost:5173", true)]
@@ -88,6 +110,7 @@ public class InfraestruturaTests
         new WebApplicationFactory<Program>().WithWebHostBuilder(b =>
         {
             b.UseEnvironment(ambiente);
+            b.UseSetting("AllowedHosts", "portfolio.exemplo;localhost");
             b.UseSetting("ConnectionStrings:Escrita", SemBaseDeDados);
             b.UseSetting("ConnectionStrings:Leitura", SemBaseDeDados);
             foreach (var (chave, valor) in configuracao)

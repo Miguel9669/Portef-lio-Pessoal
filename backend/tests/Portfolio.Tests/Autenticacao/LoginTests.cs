@@ -146,18 +146,24 @@ public sealed class LoginTests(PostgresFixture bd) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, reutilizado.StatusCode);
     }
 
+    // Limite por sessão parcial: com 3 tentativas por sessão (menos do que as 5 do bloqueio da
+    // conta), ao fim delas é preciso recomeçar pela password, mesmo sem a conta bloqueada.
     [Fact]
-    public async Task Cinco_codigos_errados_obrigam_a_recomecar_pela_password()
+    public async Task Esgotar_as_tentativas_da_sessao_obriga_a_recomecar_pela_password()
     {
-        var (segredo, _) = await _api.EntrarComDoisFatoresAsync(await _api.NovoClienteComCsrfAsync());
-        _api.AvancarParaProximoCodigo();
-        var cliente = await _api.NovoClienteComCsrfAsync();
-        await _api.LoginAsync(cliente);
+        await using var api = new FabricaApi(bd, new() { ["Autenticacao:TentativasCodigoPorSessao"] = "3" });
+        await using (var contexto = bd.NovoBackoffice())
+            await contexto.Database.ExecuteSqlRawAsync("DELETE FROM \"Utilizador\";", Ct);
+        await api.CriarAdminAsync();
+        var (segredo, _) = await api.EntrarComDoisFatoresAsync(await api.NovoClienteComCsrfAsync());
+        api.AvancarParaProximoCodigo();
+        var cliente = await api.NovoClienteComCsrfAsync();
+        await api.LoginAsync(cliente);
 
         HttpResponseMessage ultima = null!;
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 3; i++)
             ultima = await cliente.PostAsync(DoisFatores, new { codigo = "000000" });
-        var codigoCerto = await cliente.PostAsync(DoisFatores, new { codigo = _api.Codigo(segredo) });
+        var codigoCerto = await cliente.PostAsync(DoisFatores, new { codigo = api.Codigo(segredo) });
 
         Assert.Contains("Volte a introduzir a password", await Titulo(ultima));
         Assert.Equal(HttpStatusCode.Unauthorized, codigoCerto.StatusCode);
@@ -178,6 +184,86 @@ public sealed class LoginTests(PostgresFixture bd) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, bloqueado.StatusCode);
         Assert.Equal("Email ou password incorretos", await Titulo(bloqueado));
         Assert.Equal(HttpStatusCode.OK, desbloqueado.StatusCode);
+    }
+
+    // Força bruta ao 2FA: os códigos errados contam para o bloqueio da conta, e a password
+    // certa já não volta a pôr o contador a 0.
+    [Fact]
+    public async Task Os_codigos_2fa_errados_bloqueiam_a_conta()
+    {
+        var (segredo, _) = await _api.EntrarComDoisFatoresAsync(await _api.NovoClienteComCsrfAsync());
+        _api.AvancarParaProximoCodigo();
+        var atacante = await _api.NovoClienteComCsrfAsync();
+        await _api.LoginAsync(atacante);
+
+        HttpResponseMessage ultima = null!;
+        for (var i = 0; i < 5; i++)
+            ultima = await atacante.PostAsync(DoisFatores, new { codigo = "000000" });
+        var outroLogin = await _api.NovoClienteComCsrfAsync();
+        var passwordDuranteBloqueio = await _api.LoginAsync(outroLogin);
+        _api.Relogio.Advance(TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1));
+        var passwordDepois = await _api.LoginAsync(outroLogin);
+        var codigoDepois = await outroLogin.PostAsync(DoisFatores, new { codigo = _api.Codigo(segredo) });
+
+        Assert.Equal("Demasiadas tentativas. Tente mais tarde.", await Titulo(ultima));
+        Assert.Equal(HttpStatusCode.Unauthorized, passwordDuranteBloqueio.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, passwordDepois.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, codigoDepois.StatusCode);
+    }
+
+    // Bloqueio permanente: quem falha de propósito bloqueia a conta para os outros,
+    // mas não para um browser onde o dono já fez um login completo.
+    [Fact]
+    public async Task Um_dispositivo_de_confianca_entra_mesmo_com_a_conta_bloqueada()
+    {
+        var dono = await _api.NovoClienteComCsrfAsync();
+        var (segredo, _) = await _api.EntrarComDoisFatoresAsync(dono);
+        await dono.PostAsync("/api/backoffice/auth/logout");
+        var atacante = await _api.NovoClienteComCsrfAsync();
+        for (var i = 0; i < 5; i++)
+            await _api.LoginAsync(atacante, password: "password-errada-123");
+
+        var atacanteComPassword = await _api.LoginAsync(atacante);
+        var donoPassword = await _api.LoginAsync(dono);
+        _api.AvancarParaProximoCodigo();
+        var donoCodigo = await dono.PostAsync(DoisFatores, new { codigo = _api.Codigo(segredo) });
+        var eu = await dono.GetAsync(Eu);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, atacanteComPassword.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, donoPassword.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, donoCodigo.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, eu.StatusCode);
+    }
+
+    [Fact]
+    public async Task O_cookie_de_dispositivo_e_protegido_e_so_vai_nos_pedidos_de_autenticacao()
+    {
+        var cliente = await _api.NovoClienteComCsrfAsync();
+        await _api.LoginAsync(cliente);
+        var configuracao = await cliente.PostAsync(DoisFatores + "/configurar");
+        var segredo = (await configuracao.Content.ReadFromJsonAsync<ConfiguracaoTotp>(Ct))!.Segredo;
+
+        var ativacao = await cliente.PostAsync(DoisFatores + "/ativar", new { codigo = _api.Codigo(segredo) });
+
+        var cookie = ativacao.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("portfolio.dispositivo=", StringComparison.Ordinal));
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=strict", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/api/backoffice/auth", cookie, StringComparison.OrdinalIgnoreCase);
+
+    }
+
+    [Fact]
+    public async Task Um_cookie_de_dispositivo_falso_nao_da_confianca()
+    {
+        var atacante = await _api.NovoClienteComCsrfAsync();
+        for (var i = 0; i < 5; i++)
+            await _api.LoginAsync(atacante, password: "password-errada-123");
+        atacante.Cookies["portfolio.dispositivo"] = "CfDJ8-inventado";
+
+        var resposta = await _api.LoginAsync(atacante);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, resposta.StatusCode);
     }
 
     [Fact]

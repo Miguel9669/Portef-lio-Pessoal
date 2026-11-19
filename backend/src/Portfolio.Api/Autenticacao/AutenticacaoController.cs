@@ -34,6 +34,7 @@ public sealed class AutenticacaoController(
     private const string CredenciaisErradas = "Email ou password incorretos";
     private const string CodigoErrado = "Código inválido";
     private const string RecomecarLogin = "Demasiadas tentativas. Volte a introduzir a password.";
+    private const string ContaBloqueada = "Demasiadas tentativas. Tente mais tarde.";
 
     // O frontend chama este endpoint ao arrancar para receber o token CSRF (SEG11).
     [HttpGet("csrf")]
@@ -49,11 +50,11 @@ public sealed class AutenticacaoController(
     [EnableRateLimiting(Sessao.LimiteLogin)]
     public async Task<IActionResult> Login(PedidoLogin pedido, CancellationToken ct)
     {
-        var resultado = await autenticacao.EntrarAsync(pedido.Email, pedido.Password, ct);
+        var resultado = await autenticacao.EntrarAsync(pedido.Email, pedido.Password, sessoes.StampDoDispositivo(), ct);
 
         // SEG27: data (no registo), IP e email tentado; nunca a password.
         registo.LogInformation("Login {Resultado} para {Email} a partir de {Ip}",
-            resultado.Estado, pedido.Email, HttpContext.Connection.RemoteIpAddress);
+            resultado.Estado, ParaRegisto(pedido.Email), HttpContext.Connection.RemoteIpAddress);
 
         // SEG04: a mesma resposta para email inexistente, password errada e conta bloqueada.
         if (resultado.Utilizador is null)
@@ -101,13 +102,14 @@ public sealed class AutenticacaoController(
     [EnableRateLimiting(Sessao.LimiteCodigo)]
     public async Task<IActionResult> Codigo(PedidoCodigo pedido, CancellationToken ct)
     {
-        var estado = await doisFatores.ValidarAsync(pedido.Codigo, ct);
+        var estado = await doisFatores.ValidarAsync(pedido.Codigo, sessoes.StampDoDispositivo(), ct);
         registo.LogInformation("Código 2FA {Resultado} a partir de {Ip}", estado, HttpContext.Connection.RemoteIpAddress);
 
         return estado switch
         {
             EstadoCodigo.Valido => Ok(await AbrirSessaoCompletaAsync(ct)),
             EstadoCodigo.Invalido => await CodigoInvalidoAsync(),
+            EstadoCodigo.Bloqueado => await ContaBloqueadaAsync(),
             _ => Problem(title: "Configure o 2FA primeiro", statusCode: StatusCodes.Status409Conflict),
         };
     }
@@ -136,6 +138,18 @@ public sealed class AutenticacaoController(
         await sessoes.AbrirCompletaAsync(utilizador);
         return new RespostaUtilizador(utilizador.Nome, utilizador.Email);
     }
+
+    // Conta bloqueada a meio do 2FA: a sessão parcial termina e só se volta a tentar depois do bloqueio.
+    private async Task<ObjectResult> ContaBloqueadaAsync()
+    {
+        await sessoes.FecharAsync();
+        return Problem(title: ContaBloqueada, statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    // O email vem de quem faz o pedido: sem quebras de linha nem outros caracteres de controlo,
+    // senão podia escrever linhas falsas no registo ("Login Sucesso para ...").
+    private static string ParaRegisto(string texto) =>
+        new(texto.Select(c => char.IsControl(c) ? '?' : c).ToArray());
 
     private async Task<ObjectResult> CodigoInvalidoAsync()
     {

@@ -18,6 +18,11 @@ public sealed class Argon2PasswordHasher : IPasswordHasher
     private const int TamanhoSalt = 16;
     private const int TamanhoHash = 32;
 
+    // Cada cálculo usa 19 MiB de memória. Muitos logins ao mesmo tempo (de muitos IPs, que o rate
+    // limit por IP não trava) podiam esgotar a memória do servidor; assim ficam em fila.
+    private const int MaximoEmSimultaneo = 4;
+    private static readonly SemaphoreSlim EmSimultaneo = new(MaximoEmSimultaneo, MaximoEmSimultaneo);
+
     public string Hash(string password)
     {
         var salt = RandomNumberGenerator.GetBytes(TamanhoSalt);
@@ -34,14 +39,22 @@ public sealed class Argon2PasswordHasher : IPasswordHasher
 
     private static byte[] Calcular(string password, Parametros p)
     {
-        using var argon2 = new Argon2id(Encoding.UTF8.GetBytes(password))
+        EmSimultaneo.Wait();
+        try
         {
-            Salt = p.Salt,
-            MemorySize = p.Memoria,
-            Iterations = p.Iteracoes,
-            DegreeOfParallelism = p.Paralelismo,
-        };
-        return argon2.GetBytes(p.Hash.Length);
+            using var argon2 = new Argon2id(Encoding.UTF8.GetBytes(password))
+            {
+                Salt = p.Salt,
+                MemorySize = p.Memoria,
+                Iterations = p.Iteracoes,
+                DegreeOfParallelism = p.Paralelismo,
+            };
+            return argon2.GetBytes(p.Hash.Length);
+        }
+        finally
+        {
+            EmSimultaneo.Release();
+        }
     }
 
     // O formato PHC usa base64 sem o "=" no fim.

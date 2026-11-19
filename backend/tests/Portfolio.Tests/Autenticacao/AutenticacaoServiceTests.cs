@@ -37,7 +37,7 @@ public class AutenticacaoServiceTests
     }
 
     [Fact]
-    public async Task Durante_o_bloqueio_as_tentativas_nao_contam_e_um_login_certo_depois_limpa_o_contador()
+    public async Task Durante_o_bloqueio_as_tentativas_nao_contam_e_a_password_certa_nao_limpa_o_contador()
     {
         for (var i = 0; i < 5; i++)
             await Entrar("errada");
@@ -51,9 +51,26 @@ public class AutenticacaoServiceTests
         _relogio.Advance(TimeSpan.FromMinutes(2));
         var depois = await Entrar("certa");
 
+        // Só um login completo (com o código do 2FA) volta a pôr o contador a 0; a password
+        // certa sozinha não, senão quem a soubesse podia tentar códigos sem fim.
         Assert.Equal(EstadoLogin.Sucesso, depois.Estado);
-        Assert.Equal(0, _repositorio.Utilizador.TentativasFalhadas);
-        Assert.Null(_repositorio.Utilizador.BloqueadoAte);
+        Assert.Equal(5, _repositorio.Utilizador.TentativasFalhadas);
+    }
+
+    [Fact]
+    public async Task Num_dispositivo_de_confianca_o_bloqueio_nao_se_aplica()
+    {
+        for (var i = 0; i < 5; i++)
+            await Entrar("errada");
+        var stampAtual = _repositorio.Utilizador!.SecurityStamp;
+
+        var semDispositivo = await Entrar("certa");
+        var stampAntigo = await Entrar("certa", stampDispositivo: "stamp-de-antes-do-repor-password");
+        var confiavel = await Entrar("certa", stampDispositivo: stampAtual);
+
+        Assert.Equal(EstadoLogin.Bloqueado, semDispositivo.Estado);
+        Assert.Equal(EstadoLogin.Bloqueado, stampAntigo.Estado);
+        Assert.Equal(EstadoLogin.Sucesso, confiavel.Estado);
     }
 
     [Fact]
@@ -67,8 +84,8 @@ public class AutenticacaoServiceTests
         Assert.Equal(1, _hasher.Verificacoes);
     }
 
-    private Task<ResultadoLogin> Entrar(string password) =>
-        _servico.EntrarAsync("admin@exemplo.pt", password, TestContext.Current.CancellationToken);
+    private Task<ResultadoLogin> Entrar(string password, string? stampDispositivo = null) =>
+        _servico.EntrarAsync("admin@exemplo.pt", password, stampDispositivo, TestContext.Current.CancellationToken);
 
     private sealed class HasherFalso : IPasswordHasher
     {

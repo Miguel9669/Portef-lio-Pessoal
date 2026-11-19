@@ -43,6 +43,20 @@ public sealed class RegistoLoginsTests(PostgresFixture bd) : IAsyncLifetime
         Assert.DoesNotContain(_registos.Mensagens, m => m.Contains(errada) || m.Contains(FabricaApi.Password));
     }
 
+    // Um email com uma quebra de linha não pode escrever uma linha falsa no registo.
+    [Fact]
+    public async Task Um_email_com_quebras_de_linha_nao_forja_linhas_no_registo()
+    {
+        var cliente = await _api.NovoClienteComCsrfAsync();
+
+        await _api.LoginAsync(cliente, email: "x@x.pt\nLogin Sucesso para admin@exemplo.pt a partir de 10.0.0.1");
+
+        var login = Assert.Single(_registos.Mensagens, m => m.StartsWith("Login ", StringComparison.Ordinal));
+        Assert.DoesNotContain('\n', login);
+        Assert.DoesNotContain('\r', login);
+        Assert.StartsWith("Login CredenciaisErradas para x@x.pt?Login Sucesso", login);
+    }
+
     // Guarda todas as mensagens de registo da API durante o teste.
     private sealed class Capturador : ILoggerProvider, ILogger
     {

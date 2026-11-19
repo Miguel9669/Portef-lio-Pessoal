@@ -183,6 +183,7 @@ Fica para depois da v1 local ([decisão de alojamento](01-requisitos.md)).
 - [ ] Domínios: site, `admin.` para o backoffice, `/api` encaminhado para a API
 - [ ] IP real do visitante e protocolo original enviados à API (`ForwardedHeaders`, `X-Forwarded-For` e `X-Forwarded-Proto`), também nas imagens que passam pelo `rewrite` do Next.js. Sem o IP, o rate limit vê todos os pedidos a vir do proxy (SEG06); sem o protocolo, a API julga que o pedido é HTTP e recusa emitir o token CSRF (SEG11)
 - [ ] Segredos em variáveis de ambiente no servidor (SEG25)
+- [ ] `AllowedHosts` com os domínios reais, e os cabeçalhos de segurança do backoffice (ficheiros estáticos) no nginx
 - [ ] Migrações aplicadas no deploy com `portfolio_migracoes`
 - [ ] Cópias de segurança diárias da base de dados e da pasta das imagens
 - [ ] Decidir se o backoffice fica restrito a IPs ou VPN (ver [03-seguranca.md](03-seguranca.md))

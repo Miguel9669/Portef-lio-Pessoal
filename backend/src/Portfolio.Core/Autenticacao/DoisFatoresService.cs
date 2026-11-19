@@ -8,14 +8,15 @@ public enum EstadoAtivacao { Ativado, JaAtivo, NaoConfigurado, CodigoInvalido }
 
 public sealed record ResultadoAtivacao(EstadoAtivacao Estado, IReadOnlyList<string> CodigosRecuperacao);
 
-public enum EstadoCodigo { Valido, Invalido, NaoAtivo }
+public enum EstadoCodigo { Valido, Invalido, NaoAtivo, Bloqueado }
 
 // Segundo passo do login: TOTP e códigos de recuperação (SEG09).
 public sealed class DoisFatoresService(
     IRepositorioUtilizador utilizadores,
     ITotp totp,
     ICifraSegredos cifra,
-    TimeProvider relogio)
+    TimeProvider relogio,
+    OpcoesAutenticacao opcoes)
 {
     public const int NumeroCodigosRecuperacao = 10;
 
@@ -51,22 +52,36 @@ public sealed class DoisFatoresService(
             return new(EstadoAtivacao.CodigoInvalido, []);
 
         utilizador.TotpAtivo = true;
+        BloqueioConta.Limpar(utilizador);
         var codigos = SubstituirCodigosRecuperacao(utilizador);
         await utilizadores.GravarAsync(ct);
         return new(EstadoAtivacao.Ativado, codigos);
     }
 
     // Aceita o código da app ou um código de recuperação, cada um uma só vez.
-    public async Task<EstadoCodigo> ValidarAsync(string codigo, CancellationToken ct)
+    // Os códigos errados contam para o bloqueio da conta (SEG06), como as passwords erradas:
+    // sem isto, quem soubesse a password podia tentar códigos a partir de muitos IPs.
+    // Com a conta bloqueada, os códigos nem são verificados (exceto num dispositivo de confiança).
+    public async Task<EstadoCodigo> ValidarAsync(string codigo, string? stampDispositivo, CancellationToken ct)
     {
         var utilizador = await utilizadores.ObterAsync(ct);
         if (utilizador is null || !utilizador.TotpAtivo)
             return EstadoCodigo.NaoAtivo;
 
+        var agora = relogio.GetUtcNow().UtcDateTime;
+        if (BloqueioConta.Bloqueada(utilizador, agora) && !BloqueioConta.DispositivoConfiavel(utilizador, stampDispositivo))
+            return EstadoCodigo.Bloqueado;
+
         var valido = ValidarTotp(utilizador, codigo) || UsarCodigoRecuperacao(utilizador, codigo);
         if (valido)
-            await utilizadores.GravarAsync(ct);
-        return valido ? EstadoCodigo.Valido : EstadoCodigo.Invalido;
+            BloqueioConta.Limpar(utilizador);
+        else
+            BloqueioConta.RegistarFalha(utilizador, agora, opcoes);
+        await utilizadores.GravarAsync(ct);
+
+        if (valido)
+            return EstadoCodigo.Valido;
+        return BloqueioConta.Bloqueada(utilizador, agora) ? EstadoCodigo.Bloqueado : EstadoCodigo.Invalido;
     }
 
     // Um código intercetado não pode ser reutilizado nos 30 s em que ainda é válido:

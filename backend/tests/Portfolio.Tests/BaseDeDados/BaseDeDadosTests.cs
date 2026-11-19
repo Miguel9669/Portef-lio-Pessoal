@@ -167,6 +167,25 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
         Assert.Equal(2, await contexto.Projetos.CountAsync(Ct));
     }
 
+    // SEG01: o site público não consegue ler a conta do backoffice, nem com um erro no código.
+    [Fact]
+    public async Task O_utilizador_de_leitura_nao_le_a_conta_do_backoffice()
+    {
+        await using (var escrita = bd.NovoBackoffice())
+        {
+            escrita.Utilizadores.Add(NovoUtilizador("admin@exemplo.pt"));
+            await escrita.SaveChangesAsync(Ct);
+        }
+
+        await using var publico = bd.NovoPublico();
+
+        var conta = await Assert.ThrowsAsync<PostgresException>(() => publico.Utilizadores.ToListAsync(Ct));
+        var codigos = await Assert.ThrowsAsync<PostgresException>(() => publico.CodigosRecuperacao.ToListAsync(Ct));
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, conta.SqlState);
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, codigos.SqlState);
+        Assert.Empty(await publico.Projetos.ToListAsync(Ct));
+    }
+
     [Fact]
     public async Task O_contexto_publico_nao_grava()
     {
