@@ -19,7 +19,8 @@ public sealed class AutenticacaoService(
     // Calculado uma só vez: se fosse por pedido, esse caminho demorava o dobro.
     private static string? _hashFalso;
 
-    public async Task<ResultadoLogin> EntrarAsync(string email, string password, CancellationToken ct)
+    // stampDispositivo: o security stamp guardado no cookie de dispositivo de confiança, se houver.
+    public async Task<ResultadoLogin> EntrarAsync(string email, string password, string? stampDispositivo, CancellationToken ct)
     {
         var utilizador = await utilizadores.ObterPorEmailAsync(email, ct);
         if (utilizador is null)
@@ -30,35 +31,22 @@ public sealed class AutenticacaoService(
 
         var agora = relogio.GetUtcNow().UtcDateTime;
         var passwordCerta = hasher.Verificar(password, utilizador.PasswordHash);
+        var confiavel = BloqueioConta.DispositivoConfiavel(utilizador, stampDispositivo);
 
-        // Durante o bloqueio nem a password certa entra, e as tentativas não prolongam o bloqueio.
-        if (utilizador.BloqueadoAte > agora)
+        // Durante o bloqueio nem a password certa entra (exceto num dispositivo de confiança),
+        // e as tentativas não prolongam o bloqueio.
+        if (BloqueioConta.Bloqueada(utilizador, agora) && !confiavel)
             return new(EstadoLogin.Bloqueado);
 
         if (!passwordCerta)
         {
-            RegistarFalha(utilizador, agora);
+            BloqueioConta.RegistarFalha(utilizador, agora, opcoes);
             await utilizadores.GravarAsync(ct);
-            return new(utilizador.BloqueadoAte > agora ? EstadoLogin.Bloqueado : EstadoLogin.CredenciaisErradas);
+            return new(BloqueioConta.Bloqueada(utilizador, agora) ? EstadoLogin.Bloqueado : EstadoLogin.CredenciaisErradas);
         }
 
-        utilizador.TentativasFalhadas = 0;
-        utilizador.BloqueadoAte = null;
-        await utilizadores.GravarAsync(ct);
+        // O contador não volta a 0 aqui, só depois do código do 2FA (ver BloqueioConta).
         return new(EstadoLogin.Sucesso, utilizador);
-    }
-
-    // Bloqueio progressivo (SEG06): à 5.ª falha seguida 1 min, à 6.ª 5 min, a partir da 7.ª 15 min.
-    private void RegistarFalha(Utilizador utilizador, DateTime agora)
-    {
-        utilizador.TentativasFalhadas++;
-        var excesso = utilizador.TentativasFalhadas - opcoes.FalhasAntesDoBloqueio;
-        if (excesso < 0)
-            return;
-
-        var duracoes = opcoes.Duracoes;
-        var duracao = duracoes[Math.Min(excesso, duracoes.Count - 1)];
-        utilizador.BloqueadoAte = agora + duracao;
     }
 
     private string HashFalso() => _hashFalso ??= hasher.Hash(Guid.NewGuid().ToString());

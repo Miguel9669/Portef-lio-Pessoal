@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Portfolio.Core.Entidades;
@@ -20,6 +22,10 @@ public sealed class OpcoesSessao
     public TimeSpan DuracaoSessaoParcial { get; set; } = TimeSpan.FromMinutes(5);
     public int TentativasCodigoPorSessao { get; set; } = 5;
 
+    // Um browser onde se fez um login completo fica de confiança durante este tempo: nele o
+    // bloqueio da conta não se aplica (ver BloqueioConta).
+    public TimeSpan ConfiancaDispositivo { get; set; } = TimeSpan.FromDays(90);
+
     // SEG06: tentativas por IP em cada janela.
     public int LoginsPorIp { get; set; } = 5;
     public int CodigosPorIp { get; set; } = 10;
@@ -30,6 +36,7 @@ public static class Sessao
 {
     public const string Esquema = CookieAuthenticationDefaults.AuthenticationScheme;
     public const string Cookie = "portfolio.sessao";
+    public const string CookieDispositivo = "portfolio.dispositivo";
 
     // "parcial": só a password, à espera do 2FA. "completa": password e 2FA.
     public const string ClaimEtapa = "etapa";
@@ -58,13 +65,52 @@ public sealed class GestorSessao(
     IAntiforgery antiforgery,
     IMemoryCache cache,
     TimeProvider relogio,
-    IOptions<OpcoesSessao> opcoes)
+    IOptions<OpcoesSessao> opcoes,
+    IDataProtectionProvider protecao)
 {
+    private readonly ITimeLimitedDataProtector _dispositivo =
+        protecao.CreateProtector("Portfolio.Autenticacao.Dispositivo.v1").ToTimeLimitedDataProtector();
+
     private HttpContext Http => acessor.HttpContext ?? throw new InvalidOperationException("Sem pedido HTTP.");
+
+    // O security stamp guardado no cookie de dispositivo de confiança, se o cookie for válido
+    // (assinado por esta API e dentro da validade). Um cookie alterado ou expirado vale como nenhum.
+    public string? StampDoDispositivo()
+    {
+        if (!Http.Request.Cookies.TryGetValue(Sessao.CookieDispositivo, out var valor))
+            return null;
+        try
+        {
+            return _dispositivo.Unprotect(valor);
+        }
+        catch (CryptographicException)
+        {
+            return null;
+        }
+    }
+
+    // Depois de um login completo, este browser passa a ser de confiança (ver BloqueioConta).
+    // Só vai nos pedidos de autenticação; o repor-password invalida-o (muda o security stamp).
+    private void MarcarDispositivoConfiavel(Utilizador utilizador)
+    {
+        var expira = relogio.GetUtcNow() + opcoes.Value.ConfiancaDispositivo;
+        Http.Response.Cookies.Append(Sessao.CookieDispositivo, _dispositivo.Protect(utilizador.SecurityStamp, expira), new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/backoffice/auth",
+            Expires = expira,
+        });
+    }
 
     public Task AbrirParcialAsync(Utilizador utilizador) => AbrirAsync(utilizador, Sessao.Parcial);
 
-    public Task AbrirCompletaAsync(Utilizador utilizador) => AbrirAsync(utilizador, Sessao.Completa);
+    public async Task AbrirCompletaAsync(Utilizador utilizador)
+    {
+        await AbrirAsync(utilizador, Sessao.Completa);
+        MarcarDispositivoConfiavel(utilizador);
+    }
 
     // Abrir uma sessão nova apaga a anterior do servidor (a parcial, quando se completa o 2FA).
     private async Task AbrirAsync(Utilizador utilizador, string etapa)

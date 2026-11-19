@@ -1,6 +1,6 @@
 # Segurança — Portfólio Pessoal
 
-**Versão:** 0.2 (rascunho) · **Data:** 2026-11-18 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md)
+**Versão:** 0.3 · **Data:** 2026-11-19 · **Base:** [01-requisitos.md](01-requisitos.md), [02-base-de-dados.md](02-base-de-dados.md)
 
 ## Visão geral
 
@@ -20,7 +20,7 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
 ### Base de dados
 
 - **SEG01 — Utilizadores separados por permissões.**
-  - `portfolio_leitura` (site público): só `SELECT`. Mesmo com um erro no código, o site não consegue escrever.
+  - `portfolio_leitura` (site público): só `SELECT`, e sem acesso nenhum às tabelas `Utilizador` e `CodigoRecuperacao`. Mesmo com um erro no código, o site não consegue escrever nem ler a conta do backoffice.
   - `portfolio_escrita` (backoffice): `SELECT`, `INSERT`, `UPDATE` e `DELETE`, sem permissão para alterar tabelas.
   - `portfolio_migracoes`: o único com permissões de estrutura (`CREATE`, `ALTER`, `DROP`). É usado só no deploy, para aplicar migrações, e nunca pela aplicação em execução.
 - **SEG02 — Dois `DbContext`.** Um `PublicoDbContext` com a connection string de leitura e um `BackofficeDbContext` com a de escrita. O de leitura usa `AsNoTracking` por defeito e não expõe `SaveChanges`.
@@ -32,7 +32,8 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
 - **SEG05 — Tempo de resposta igual.** Se o utilizador não existir, verifica-se a password contra um hash Argon2 falso. Sem isto, a resposta "não existe" é muito mais rápida que "password errada" (cerca de 0 ms contra cerca de 50 ms), e esse tempo denuncia quais nomes existem, mesmo com a mensagem genérica.
 - **SEG06 — Rate limit no login.** Usa o rate limiter nativo do ASP.NET Core:
   - por IP, por exemplo 5 tentativas a cada 15 minutos;
-  - por conta, com bloqueio progressivo (1 min, 5 min, 15 min…), para travar ataques distribuídos por vários IPs.
+  - por conta, com bloqueio progressivo (1 min, 5 min, 15 min…), para travar ataques distribuídos por vários IPs. As passwords erradas e os códigos do 2FA errados contam para o mesmo bloqueio, e o contador só volta a 0 depois de um login completo; senão, quem soubesse a password podia tentar códigos sem fim.
+  - **Dispositivos de confiança:** um browser onde já se fez um login completo recebe um cookie assinado (90 dias, `HttpOnly`, `Secure`, só nos pedidos de autenticação). Nele o bloqueio da conta não se aplica, por isso quem falhar de propósito não consegue manter o dono fora da conta. O `repor-password` invalida todos os dispositivos.
 
   Atrás de um proxy (nginx, Cloudflare), é preciso configurar `ForwardedHeaders`; senão todos os pedidos parecem vir do IP do proxy e um atacante bloqueia toda a gente.
 - **SEG07 — Password forte.** Mínimo de 12 caracteres, guardada com Argon2id ([RNF01](01-requisitos.md#requisitos-não-funcionais)).
@@ -127,7 +128,8 @@ Valores iniciais propostos. Ficam na configuração (`appsettings.json`), por is
 | --- | --- | --- |
 | Tentativas de login por IP | 5 a cada 15 minutos | SEG06 |
 | Bloqueio por conta | Após 5 falhas seguidas: 1 min, depois 5 min, depois 15 min | SEG06 |
-| Tentativas de código 2FA | 5 por sessão de login; depois, recomeça desde a password | SEG06, SEG09 |
+| Tentativas de código 2FA | 5 por sessão de login; depois, recomeça desde a password. Contam também para o bloqueio da conta | SEG06, SEG09 |
+| Dispositivo de confiança | 90 dias | SEG06 |
 | Password | Mínimo 12 caracteres | SEG07 |
 | Sessão sem atividade | 30 minutos | SEG12 |
 | Duração máxima da sessão | 8 horas | SEG12 |

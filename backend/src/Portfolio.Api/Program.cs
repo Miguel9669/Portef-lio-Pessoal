@@ -16,8 +16,13 @@ if (args is ["migrar", ..])
 
 builder.Services.AddPortfolioApi(builder.Configuration);
 
-// SEG18: limite global do corpo dos pedidos no Kestrel (o maior é o envio de uma imagem).
-builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = ImagensController.TamanhoMaximoPedido);
+builder.WebHost.ConfigureKestrel(o =>
+{
+    // SEG18: limite global do corpo dos pedidos (o maior é o envio de uma imagem).
+    o.Limits.MaxRequestBodySize = ImagensController.TamanhoMaximoPedido;
+    // Sem o cabeçalho "Server: Kestrel", que só serve para dizer a um atacante o que procurar.
+    o.AddServerHeader = false;
+});
 
 var app = builder.Build();
 

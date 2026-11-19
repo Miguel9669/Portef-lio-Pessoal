@@ -167,10 +167,10 @@ Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 
 ## Fase 8 — Testes e revisão
 
-- [ ] Revisão das medidas SEG01–SEG29, uma a uma, contra o código
+- [x] Revisão das medidas SEG01–SEG29, uma a uma, contra o código ([06-revisao-seguranca.md](06-revisao-seguranca.md)), com os testes que faltavam (SEG22, SEG23 no site, SEG24, SEG26, SEG27)
 - [ ] Testes de ponta a ponta do fluxo principal: login com 2FA, criar projeto com link do GitHub e imagem, publicar, ver no site com a timeline
-- [ ] `dotnet list package --vulnerable` e `npm audit` sem vulnerabilidades por resolver
-- [ ] Rever os documentos em `docs/` para refletirem o que foi construído
+- [x] `dotnet list package --vulnerable` e `npm audit` sem vulnerabilidades por resolver (uma moderada aceite até ao fim de novembro, ver a revisão)
+- [x] Rever os documentos em `docs/` para refletirem o que foi construído
 
 **Concluída quando:** a revisão de segurança não tem pontos por resolver e o fluxo de ponta a ponta passa.
 
@@ -183,6 +183,7 @@ Fica para depois da v1 local ([decisão de alojamento](01-requisitos.md)).
 - [ ] Domínios: site, `admin.` para o backoffice, `/api` encaminhado para a API
 - [ ] IP real do visitante e protocolo original enviados à API (`ForwardedHeaders`, `X-Forwarded-For` e `X-Forwarded-Proto`), também nas imagens que passam pelo `rewrite` do Next.js. Sem o IP, o rate limit vê todos os pedidos a vir do proxy (SEG06); sem o protocolo, a API julga que o pedido é HTTP e recusa emitir o token CSRF (SEG11)
 - [ ] Segredos em variáveis de ambiente no servidor (SEG25)
+- [ ] `AllowedHosts` com os domínios reais, e os cabeçalhos de segurança do backoffice (ficheiros estáticos) no nginx
 - [ ] Migrações aplicadas no deploy com `portfolio_migracoes`
 - [ ] Cópias de segurança diárias da base de dados e da pasta das imagens
 - [ ] Decidir se o backoffice fica restrito a IPs ou VPN (ver [03-seguranca.md](03-seguranca.md))
