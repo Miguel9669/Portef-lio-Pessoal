@@ -17,9 +17,12 @@ public sealed partial class ArmazenamentoDiscoLocal : IArmazenamentoImagens
     }
 
     // Grava primeiro num ficheiro temporário: quem lê nunca vê uma imagem a meio.
+    // A pasta é garantida em cada gravação, e não só ao arrancar: se for apagada ou se o disco
+    // for montado depois, os envios continuam a funcionar sem reiniciar a API.
     public async Task GuardarAsync(string ficheiro, byte[] conteudo, CancellationToken ct)
     {
         var caminho = Caminho(ficheiro);
+        Directory.CreateDirectory(_pasta);
         var temporario = caminho + ".tmp";
         await File.WriteAllBytesAsync(temporario, conteudo, ct);
         File.Move(temporario, caminho);

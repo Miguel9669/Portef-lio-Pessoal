@@ -1,0 +1,57 @@
+name: Ponta a ponta
+
+# O fluxo principal num browser real (Playwright), com tudo a correr: PostgreSQL próprio, API,
+# backoffice e site. Login com 2FA, criar um bloco e um projeto com imagem, publicar e ver no site.
+# Corre no GitHub Actions; localmente: cd e2e && npm ci && npx playwright test.
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev, stage]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fluxo-principal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # A API corre em HTTPS com o certificado de desenvolvimento; o Node do site confia nele
+      # através de NODE_EXTRA_CA_CERTS (só o certificado público é exportado).
+      - name: Certificado de desenvolvimento
+        run: |
+          dotnet dev-certs https
+          mkdir -p ~/.aspnet/https
+          dotnet dev-certs https -ep ~/.aspnet/https/portfolio-dev.pem --format PEM
+      - name: Dependências
+        run: |
+          dotnet build backend/src/Portfolio.Api
+          (cd frontend/backoffice && npm ci)
+          (cd frontend/site && npm ci)
+          (cd e2e && npm ci)
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: npm run typecheck
+        working-directory: e2e
+      - run: npx playwright test
+        working-directory: e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ failure() && !github.event.act }}
+        with:
+          name: relatorio-ponta-a-ponta
+          path: e2e/playwright-report
+          if-no-files-found: ignore

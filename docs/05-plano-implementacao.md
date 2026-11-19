@@ -168,7 +168,7 @@ Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 ## Fase 8 — Testes e revisão
 
 - [x] Revisão das medidas SEG01–SEG29, uma a uma, contra o código ([06-revisao-seguranca.md](06-revisao-seguranca.md)), com os testes que faltavam (SEG22, SEG23 no site, SEG24, SEG26, SEG27)
-- [ ] Testes de ponta a ponta do fluxo principal: login com 2FA, criar projeto com link do GitHub e imagem, publicar, ver no site com a timeline
+- [x] Testes de ponta a ponta do fluxo principal: login com 2FA, criar projeto com link do GitHub e imagem, publicar, ver no site com a timeline (`e2e/`, Playwright, workflow "Ponta a ponta")
 - [x] `dotnet list package --vulnerable` e `npm audit` sem vulnerabilidades por resolver (uma moderada aceite até ao fim de novembro, ver a revisão)
 - [x] Rever os documentos em `docs/` para refletirem o que foi construído
 

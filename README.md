@@ -179,7 +179,21 @@ Os workflows estão em `.github/workflows/` e correm em cada pull request e em c
 | Sintaxe | `dotnet format`, actionlint, shellcheck | Erros de formatação, nos workflows ou nos scripts |
 | Segurança | CodeQL, gitleaks, dependency review, zizmor | Vulnerabilidade, segredo ou dependência vulnerável |
 | Trivy | Repositório e imagens Docker | Vulnerabilidade HIGH ou CRITICAL com correção |
+| Ponta a ponta | O fluxo principal num browser real (Playwright): login com 2FA, criar bloco e projeto com imagem, publicar, ver no site | Algum passo do fluxo falha |
 | Mutações | Stryker.NET (ao domingo ou à mão) | Por agora só informa |
+
+### Teste de ponta a ponta
+
+O fluxo principal num browser real, com tudo a correr: um PostgreSQL próprio (porta 55432, ou `E2E_PORTA_BD`, apagado no fim), a API (7103), o backoffice (5273) e o site (3100). Não mexe na base de dados nem na conta de desenvolvimento, e pode correr ao lado dos servidores de desenvolvimento.
+
+```bash
+cd e2e
+npm ci
+npx playwright install chromium   # uma vez
+npx playwright test               # E2E_MANTER=1 para não apagar a base de dados no fim
+```
+
+Precisa do Docker, do certificado exportado (passo 8) e de uns 3 GB de memória livre.
 
 ### CI local
 

@@ -30,6 +30,16 @@ updates:
       npm:
         patterns: ["*"]
 
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      npm:
+        patterns: ["*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
