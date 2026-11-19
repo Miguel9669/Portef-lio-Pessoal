@@ -244,7 +244,8 @@ Aplicação que corre toda no browser (SPA). Os pedidos à API são feitos pelo 
 ## Desenvolvimento local
 
 - **PostgreSQL** corre num contentor, com `docker compose up -d`. O script de arranque cria os três utilizadores da base de dados ([SEG01](03-seguranca.md)).
-- **API** com `dotnet run`, em `https://localhost:7xxx`. Os segredos (connection strings) ficam em `dotnet user-secrets` ([SEG25](03-seguranca.md)).
+- **API** com `dotnet run`, em `https://localhost:7003` (HTTPS também em desenvolvimento, porque o token CSRF e o cookie de sessão só circulam por HTTPS). Os segredos (connection strings) ficam em `dotnet user-secrets` ([SEG25](03-seguranca.md)).
+- **Testes de tudo** com `./ci.sh`, que corre os mesmos workflows do GitHub Actions localmente (com o act).
 - **Backoffice** com `npm run dev` (Vite). O Vite reencaminha `/api` para a API (proxy), por isso o browser vê tudo no mesmo endereço. Assim o cookie `SameSite=Strict` funciona igual ao de produção, e não é preciso CORS em desenvolvimento.
 - **Site** com `npm run dev` (Next.js). O endereço da API fica numa variável de ambiente (`API_URL`); as imagens passam por um `rewrite` de `/api` para a API.
 

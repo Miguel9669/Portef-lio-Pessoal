@@ -9,7 +9,7 @@ Portfólio pessoal com um site público e um backoffice para gerir o conteúdo: 
 | Site público | Next.js, TypeScript, Tailwind, shadcn/ui | `frontend/site/` (fase 7) |
 | Backoffice | Vite, React, TypeScript, Tailwind, shadcn/ui | `frontend/backoffice/` (fase 6) |
 
-A documentação do projeto está em [`docs/`](docs/): requisitos, base de dados, segurança, componentes e plano de implementação.
+A documentação do projeto está em [`docs/`](docs/): requisitos, base de dados, segurança, componentes, plano de implementação e a [revisão de segurança](docs/06-revisao-seguranca.md), com cada medida ligada ao código e ao teste que a prova.
 
 ## Requisitos
 
