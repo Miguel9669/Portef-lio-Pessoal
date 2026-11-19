@@ -20,6 +20,8 @@ const csp = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // O next dev não escreve um AGENTS.md no repositório quando deteta um assistente de IA.
+  agentRules: false,
   // O browser pede as imagens ao site, que as vai buscar à API (só de projetos públicos, SEG16).
   async rewrites() {
     return [{ source: '/api/publico/imagens/:ficheiro', destination: `${api}/api/publico/imagens/:ficheiro` }]
