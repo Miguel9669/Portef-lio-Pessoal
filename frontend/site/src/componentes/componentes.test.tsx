@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { blocos, projeto, timeline } from '@/testes/dados'
 import { Aviso, Cabecalho, Rodape, ligacoesDoMenu } from './Estrutura'
 import { CartaoProjeto, Heroi, SecaoBloco } from './Inicio'
-import { BotaoGithub, Galeria, TimelineCommits } from './Projeto'
+import { BotaoGithub, Galeria, LigacoesProjeto, TimelineCommits } from './Projeto'
 
 describe('estrutura', () => {
   it('o menu tem os blocos (menos o do topo) e os projetos', () => {
@@ -60,7 +60,7 @@ describe('início', () => {
   })
 
   it('um projeto sem imagens nem repositório mostra a inicial', () => {
-    render(<ul><CartaoProjeto projeto={projeto({ imagens: [], repositorioGithub: null, descricao: null })} /></ul>)
+    render(<ul><CartaoProjeto projeto={projeto({ imagens: [], repositorioGithub: null, descricao: null, temHistorico: false })} /></ul>)
 
     expect(screen.getByText('P')).toBeInTheDocument()
     expect(screen.queryByText('Com timeline do GitHub')).toBeNull()
@@ -78,6 +78,33 @@ describe('página do projeto', () => {
     const { container } = render(<Galeria imagens={[]} nome="X" />)
 
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('o cartão mostra o domínio do site oficial', () => {
+    render(<ul><CartaoProjeto projeto={projeto({ linkOficial: 'https://www.meuapp.pt/', temHistorico: false })} /></ul>)
+
+    expect(screen.getByText('meuapp.pt')).toBeInTheDocument()
+    expect(screen.queryByText('Com timeline do GitHub')).toBeNull()
+  })
+
+  it('o site oficial é o botão principal e o GitHub o secundário, ambos noutro separador (SEG30)', () => {
+    render(<LigacoesProjeto linkOficial="https://meuapp.pt/" repositorioGithub="https://github.com/dono/repo" />)
+
+    const [site, codigo] = screen.getAllByRole('link')
+    expect(site).toHaveTextContent('Visitar site')
+    expect(site).toHaveTextContent('meuapp.pt')
+    expect(site).toHaveAttribute('href', 'https://meuapp.pt/')
+    expect(site).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(site).toHaveAttribute('target', '_blank')
+    expect(codigo).toHaveTextContent('Ver código no GitHub')
+  })
+
+  it('só com o código privado e sem site oficial, não há botões; um link que não seja https nunca é botão', () => {
+    const { container, rerender } = render(<LigacoesProjeto linkOficial={null} repositorioGithub={null} />)
+    expect(container).toBeEmptyDOMElement()
+
+    rerender(<LigacoesProjeto linkOficial="javascript:alert(1)" repositorioGithub={null} />)
+    expect(screen.queryByRole('link')).toBeNull()
   })
 
   it('o botão do GitHub abre noutro separador sem dar acesso à página', () => {

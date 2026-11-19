@@ -207,6 +207,8 @@ sequenceDiagram
 - **São mostrados os 100 commits mais recentes** do branch por defeito (uma página da API do GitHub). Cada um leva a primeira linha da mensagem, o autor, a data e o link para o commit no GitHub.
 - **Se o GitHub falhar**, devolve-se a última versão em cache ou, sem ela, a indicação de que a timeline está indisponível; a página do projeto continua a funcionar. Depois de uma falha, espera-se 1 minuto antes de voltar a pedir.
 - **A resposta tem um `estado`:** `atual`, `desatualizada` (o GitHub falhou e estes são os commits da última resposta), `indisponivel`, `repositorioNaoEncontrado` (não existe ou é privado sem acesso) ou `semRepositorio`.
+- **Código privado:** com `CodigoPrivado`, o site não recebe o link do repositório e a timeline pública devolve `semRepositorio` sem pedir nada ao GitHub, a menos que `HistoricoPublico` esteja ligado. O backoffice vê sempre os commits.
+- **Link oficial:** o site oficial do projeto aparece como o botão principal da página do projeto ("Visitar site") e o domínio no cartão do projeto ([SEG30](03-seguranca.md)).
 - As regras de segurança (só links do GitHub, texto e não HTML, repositórios privados) estão em [SEG29](03-seguranca.md).
 
 ## Frontends

@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { defineConfig, devices } from '@playwright/test'
-import { API, BACKOFFICE, SITE, ambienteApi, caminho } from './ambiente'
+import { API, BACKOFFICE, PORTA_BACKOFFICE, PORTA_SITE, SITE, ambienteApi, caminho } from './ambiente'
 
 // O site guarda em disco a cache dos dados da API (ISR) entre execuções. Cada execução cria uma base
 // de dados nova, por isso a cache da anterior mostraria conteúdo que já não existe (por exemplo uma
@@ -38,7 +38,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: 'npm run dev -- --port 5273',
+      command: `npm run dev -- --port ${PORTA_BACKOFFICE}`,
       cwd: caminho('frontend', 'backoffice'),
       url: BACKOFFICE,
       env: { API_URL: API },
@@ -46,7 +46,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: 'npx next dev --port 3100',
+      command: `npx next dev --port ${PORTA_SITE}`,
       cwd: caminho('frontend', 'site'),
       url: SITE,
       env: {

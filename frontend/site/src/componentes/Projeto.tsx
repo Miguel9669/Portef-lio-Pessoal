@@ -85,6 +85,43 @@ export function TimelineCommits({ timeline, agora = new Date() }: { timeline: Ti
   )
 }
 
+// Botões da página do projeto: o site oficial é o principal; o código no GitHub, o secundário.
+export function LigacoesProjeto({ linkOficial, repositorioGithub }: { linkOficial: string | null; repositorioGithub: string | null }) {
+  if (!linkOficial && !repositorioGithub) return null
+  return (
+    <div className="mt-8 flex flex-wrap gap-3">
+      {linkOficial && <BotaoSiteOficial url={linkOficial} />}
+      {repositorioGithub && <BotaoGithub url={repositorioGithub} />}
+    </div>
+  )
+}
+
+// SEG30: abre noutro separador, sem dar ao site do projeto acesso a esta página (noopener) nem
+// dizer de onde veio o visitante (noreferrer). O link só é aceite se for https://.
+export function BotaoSiteOficial({ url }: { url: string }) {
+  if (!url.startsWith('https://')) return null
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-stone-900/20 transition hover:bg-stone-800 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
+    >
+      Visitar site
+      <span className="text-stone-400 dark:text-stone-500">{dominio(url)}</span>
+      <SetaCanto className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+    </a>
+  )
+}
+
+export function dominio(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return ''
+  }
+}
+
 export function BotaoGithub({ url }: { url: string }) {
   return (
     <a

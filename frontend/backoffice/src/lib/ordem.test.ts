@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aplicarErrosApi, formatoGithub } from './formularios'
+import { aplicarErrosApi, formatoGithub, linkOficialValido } from './formularios'
 import { novaOrdem } from './ordem'
 import { ErroApi } from '@/api/cliente'
 
@@ -27,6 +27,16 @@ describe('formatoGithub', () => {
       expect(formatoGithub.test(link)).toBe(false)
     },
   )
+})
+
+describe('linkOficialValido', () => {
+  it.each(['https://meuapp.pt', 'https://www.meuapp.pt/produto?x=1'])('aceita %s', (link) => {
+    expect(linkOficialValido(link)).toBe(true)
+  })
+
+  it.each(['http://meuapp.pt', 'meuapp.pt', 'javascript:alert(1)', 'https://banco.pt@evil.example', 'https://localhost'])('recusa %s', (link) => {
+    expect(linkOficialValido(link)).toBe(false)
+  })
 })
 
 describe('aplicarErrosApi', () => {

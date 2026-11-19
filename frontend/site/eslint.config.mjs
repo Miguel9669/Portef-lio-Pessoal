@@ -5,7 +5,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores(['.next/**', 'out/**', 'coverage/**', 'next-env.d.ts']),
+  globalIgnores(['.next/**', '.next-e2e/**', 'out/**', 'coverage/**', 'next-env.d.ts']),
   {
     rules: {
       // SEG21/SEG29: nada de HTML injetado, exceto o do componente HtmlDaApi (já sanitizado pela API).

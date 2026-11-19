@@ -122,6 +122,53 @@ public sealed class SitePublicoTests(PostgresFixture bd) : IAsyncLifetime
         Assert.Equal(pedidosAoGithub, _github.Pedidos);
     }
 
+    // SEG29: com o código privado, o site não recebe o link do repositório e nem se pede ao GitHub.
+    [Fact]
+    public async Task Um_projeto_com_codigo_privado_nao_mostra_o_repositorio_nem_o_historico()
+    {
+        var id = await CriarPublicado(new { nome = "Privado", repositorioGithub = "https://github.com/dono/privado", codigoPrivado = true });
+        var pedidosAoGithub = _github.Pedidos;
+
+        var projeto = await Ler<ProjetoPublico>($"{Publico}/projetos/privado");
+        var timeline = await Ler<RespostaTimeline>($"{Publico}/projetos/privado/timeline");
+        var lista = await _visitante.GetAsync($"{Publico}/projetos");
+        var noBackoffice = await Ler<RespostaTimeline>($"/api/backoffice/projetos/{id}/timeline", _backoffice);
+
+        Assert.Null(projeto.RepositorioGithub);
+        Assert.False(projeto.TemHistorico);
+        Assert.Equal(EstadoTimeline.SemRepositorio, timeline.Estado);
+        Assert.DoesNotContain("github.com/dono/privado", await lista.Content.ReadAsStringAsync(Ct));
+        // No backoffice os commits continuam visíveis, para uso do dono.
+        Assert.Equal(EstadoTimeline.Atual, noBackoffice.Estado);
+        Assert.Equal(pedidosAoGithub + 1, _github.Pedidos);
+    }
+
+    [Fact]
+    public async Task Com_o_historico_publico_ligado_mostra_os_commits_mas_nao_o_link_do_codigo()
+    {
+        await CriarPublicado(new { nome = "Privado com historico", repositorioGithub = "https://github.com/dono/privado", codigoPrivado = true, historicoPublico = true });
+
+        var projeto = await Ler<ProjetoPublico>($"{Publico}/projetos/privado-com-historico");
+        var timeline = await Ler<RespostaTimeline>($"{Publico}/projetos/privado-com-historico/timeline");
+
+        Assert.Null(projeto.RepositorioGithub);
+        Assert.True(projeto.TemHistorico);
+        Assert.Equal(2, timeline.Commits.Count);
+    }
+
+    // SEG30
+    [Fact]
+    public async Task O_link_oficial_aparece_no_site()
+    {
+        await CriarPublicado(new { nome = "Com site", linkOficial = "https://meuapp.pt" });
+
+        var projeto = await Ler<ProjetoPublico>($"{Publico}/projetos/com-site");
+
+        Assert.Equal("https://meuapp.pt/", projeto.LinkOficial);
+        Assert.Null(projeto.RepositorioGithub);
+        Assert.False(projeto.TemHistorico);
+    }
+
     [Fact]
     public async Task Despublicar_tira_logo_o_projeto_e_as_imagens_do_site()
     {
@@ -188,12 +235,19 @@ public sealed class SitePublicoTests(PostgresFixture bd) : IAsyncLifetime
         return (await (await _backoffice.GetAsync($"/api/backoffice/projetos/{criado.Id}")).Content.ReadFromJsonAsync<RespostaProjeto>(Ct))!;
     }
 
+    private async Task<int> CriarPublicado(object pedido)
+    {
+        var criado = await (await _backoffice.PostAsync("/api/backoffice/projetos", pedido)).Content.ReadFromJsonAsync<RespostaProjeto>(Ct);
+        await _backoffice.EnviarAsync(HttpMethod.Put, $"/api/backoffice/projetos/{criado!.Id}/publico", new { publico = true });
+        return criado.Id;
+    }
+
     private Task<HttpResponseMessage> CriarBloco(string titulo, string conteudo, bool publico) =>
         _backoffice.PostAsync("/api/backoffice/blocos", new { titulo, conteudo, publico });
 
-    private async Task<T> Ler<T>(string url)
+    private async Task<T> Ler<T>(string url, ClienteTeste? cliente = null)
     {
-        var resposta = await _visitante.GetAsync(url);
+        var resposta = await (cliente ?? _visitante).GetAsync(url);
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
         return (await resposta.Content.ReadFromJsonAsync<T>(Json, Ct))!;
     }

@@ -4,11 +4,11 @@
 
 ## Visão geral
 
-Cada medida de segurança (SEG01–SEG29) foi revista contra o código: onde está implementada e que teste automático prova que funciona. Os testes correm no CI em cada pull request (GitHub Actions) e antes de cada push (`./ci.sh`, hook `pre-push`).
+Cada medida de segurança (SEG01–SEG30) foi revista contra o código: onde está implementada e que teste automático prova que funciona. Os testes correm no CI em cada pull request (GitHub Actions) e antes de cada push (`./ci.sh`, hook `pre-push`).
 
 | Resultado | Medidas |
 | --- | --- |
-| Implementada e com teste | 26 |
+| Implementada e com teste | 27 |
 | Implementada, verificada de outra forma (análise estática, CI, configuração) | 2 (SEG03, SEG25) |
 | Fora da v1 (decisão) | 1 (SEG15) |
 | Por fazer, na fase 9 (deploy) | Partes de SEG06, SEG11 e SEG22, ver [Pendentes](#pendentes) |
@@ -75,11 +75,12 @@ Os nomes dos ficheiros são relativos a `backend/src/`, `backend/tests/Portfolio
 | **SEG27** Registo de acessos | `AutenticacaoController`: resultado, email tentado (sem caracteres de controlo) e IP de cada login e código 2FA | `RegistoLoginsTests.Os_logins_sao_registados_sem_a_password`, `…Um_email_com_quebras_de_linha_nao_forja_linhas_no_registo` |
 | **SEG28** Dependências atualizadas | NuGetAudit (avisos como erros), Dependabot (NuGet, npm com 14 dias de espera, Actions, Docker), Trivy, `npm audit`, Dependency Review | CI em cada PR; ver [Vulnerabilidades](#vulnerabilidades-nas-dependências) |
 
-## GitHub
+## GitHub e links dos projetos
 
 | Medida | Implementação | Prova |
 | --- | --- | --- |
-| **SEG29** Timeline do GitHub | `LinkGithub` (formato fixo), CHECK na base de dados, `GithubApi` (endereço montado pela API, links dos commits montados pela API), `CacheTimeline` (10 min, 1 min após falha); frontends mostram os commits como texto | `LinkGithubTests`, `BaseDeDadosTests.A_base_de_dados_so_aceita_links_de_repositorios_do_github`, `BackofficeConteudoTests.Um_link_que_nao_seja_do_github_e_recusado`, `GithubApiTests`, `CacheTimelineTests`; backoffice e site: testes da timeline com mensagens com HTML |
+| **SEG29** Timeline do GitHub | `LinkGithub` (formato fixo), CHECK na base de dados, `GithubApi` (endereço montado pela API, links dos commits montados pela API), `CacheTimeline` (10 min, 1 min após falha); frontends mostram os commits como texto | `LinkGithubTests`, `BaseDeDadosTests.A_base_de_dados_so_aceita_links_de_repositorios_do_github`, `BackofficeConteudoTests.Um_link_que_nao_seja_do_github_e_recusado`, `GithubApiTests`, `CacheTimelineTests`, `SitePublicoTests.Um_projeto_com_codigo_privado_nao_mostra_o_repositorio_nem_o_historico`, `…Com_o_historico_publico_ligado_mostra_os_commits_mas_nao_o_link_do_codigo`; backoffice e site: testes da timeline com mensagens com HTML |
+| **SEG30** Link oficial do projeto | `LinkOficial` (só `https://`, sem utilizador, domínio em ASCII, até 200 caracteres), CHECK na base de dados; no site, `BotaoSiteOficial` só com `https://` e `rel="noopener noreferrer"` | `LinkOficialTests`, `BaseDeDadosTests.A_base_de_dados_so_aceita_links_oficiais_https`, `BackofficeConteudoTests.Um_link_oficial_que_nao_seja_https_e_recusado`, `SitePublicoTests.O_link_oficial_aparece_no_site`; backoffice e site: testes do link oficial |
 
 ## Vulnerabilidades nas dependências
 

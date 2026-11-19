@@ -11,6 +11,9 @@ const projeto = (dados: Partial<Projeto> = {}): Projeto => ({
   slug: 'portfolio',
   descricao: null,
   repositorioGithub: 'https://github.com/dono/repo',
+  linkOficial: null,
+  codigoPrivado: false,
+  historicoPublico: false,
   publico: false,
   imagens: [],
   ...dados,
@@ -56,7 +59,50 @@ describe('criar e editar projetos', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Criar projeto' }))
 
     expect(await screen.findByText('Endereço no site: /projetos/portfolio')).toBeInTheDocument()
-    expect(chamadas.find((c) => c.metodo === 'POST')?.corpo).toEqual({ nome: 'Portfólio', descricao: null, repositorioGithub: 'github.com/dono/repo' })
+    expect(chamadas.find((c) => c.metodo === 'POST')?.corpo).toEqual({
+      nome: 'Portfólio',
+      descricao: null,
+      repositorioGithub: 'github.com/dono/repo',
+      linkOficial: null,
+      codigoPrivado: false,
+      historicoPublico: false,
+    })
+  })
+
+  it('recusa um link oficial que não seja https antes de enviar', async () => {
+    const chamadas = simularApi({ ...sessao })
+    abrir('/projetos/novo')
+
+    await userEvent.type(await screen.findByLabelText('Nome'), 'X')
+    await userEvent.type(screen.getByLabelText('Link oficial (opcional)'), 'http://meuapp.pt')
+    await userEvent.click(screen.getByRole('button', { name: 'Criar projeto' }))
+
+    expect(await screen.findByText(/Tem de ser um endereço https:\/\/ completo/)).toBeInTheDocument()
+    expect(chamadas.some((c) => c.metodo === 'POST')).toBe(false)
+  })
+
+  it('envia o link oficial e a escolha do código privado; o histórico só se liga com o código privado', async () => {
+    const chamadas = simularApi({
+      ...sessao,
+      [`POST ${base}`]: ok(projeto()),
+      [`GET ${base}`]: ok([]),
+      [`GET ${base}/7`]: ok(projeto()),
+      [`GET ${base}/7/timeline`]: ok(timelineVazia),
+    })
+    abrir('/projetos/novo')
+
+    await userEvent.type(await screen.findByLabelText('Nome'), 'Sério')
+    await userEvent.type(screen.getByLabelText('Link oficial (opcional)'), 'https://meuapp.pt')
+    const historico = screen.getByRole('switch', { name: 'Mostrar histórico no site' })
+    expect(historico).toBeDisabled()
+    await userEvent.click(screen.getByRole('switch', { name: 'Código privado' }))
+    expect(historico).toBeEnabled()
+    await userEvent.click(historico)
+    await userEvent.click(screen.getByRole('button', { name: 'Criar projeto' }))
+
+    await waitFor(() =>
+      expect(chamadas.find((c) => c.metodo === 'POST')?.corpo).toMatchObject({ linkOficial: 'https://meuapp.pt', codigoPrivado: true, historicoPublico: true }),
+    )
   })
 
   it('mostra no campo o erro devolvido pela API', async () => {
@@ -86,7 +132,16 @@ describe('criar e editar projetos', () => {
     expect(descricao).toHaveValue('Antiga')
     await userEvent.clear(descricao)
     await userEvent.click(screen.getByRole('button', { name: 'Gravar' }))
-    await waitFor(() => expect(chamadas.find((c) => c.metodo === 'PUT' && c.url === `${base}/7`)?.corpo).toEqual({ nome: 'Portfólio', descricao: null, repositorioGithub: 'https://github.com/dono/repo' }))
+    await waitFor(() =>
+      expect(chamadas.find((c) => c.metodo === 'PUT' && c.url === `${base}/7`)?.corpo).toEqual({
+        nome: 'Portfólio',
+        descricao: null,
+        repositorioGithub: 'https://github.com/dono/repo',
+        linkOficial: null,
+        codigoPrivado: false,
+        historicoPublico: false,
+      }),
+    )
 
     await userEvent.click(screen.getByRole('switch', { name: 'Público no site' }))
     expect(await screen.findByText('Público no site')).toBeInTheDocument()

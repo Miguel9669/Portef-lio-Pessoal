@@ -140,6 +140,9 @@ Os projetos do portfólio (RF06–RF09).
 | Slug | varchar(160) | não | Único; gerado a partir do nome ao criar, e não muda depois, para os links partilhados continuarem a funcionar; usado no URL público (`/projetos/meu-projeto`) |
 | Descricao | text | sim | |
 | RepositorioGithub | varchar(200) | sim | Link do repositório, sempre no formato `https://github.com/dono/repositorio` (RF10, [SEG29](03-seguranca.md)); `null` = sem timeline |
+| CodigoPrivado | boolean | não | Por defeito `false`. Com `true`, o site não mostra o link do repositório ([SEG29](03-seguranca.md)) |
+| HistoricoPublico | boolean | não | Por defeito `false`. Só conta com o código privado: com `true`, o site mostra os commits do repositório privado |
+| LinkOficial | varchar(200) | sim | Site oficial do projeto, só `https://` e sem utilizador no endereço ([SEG30](03-seguranca.md)); `null` = sem botão "Visitar site" |
 | Publico | boolean | não | Por defeito `false` (RF08) |
 | CriadoEm | timestamptz | não | |
 | AtualizadoEm | timestamptz | não | Atualizado a cada edição |
@@ -176,6 +179,8 @@ A cascata só limpa a base de dados. Os ficheiros têm de ser apagados pelo serv
 
 ## Histórico
 
+- **2026-11-19:** o `Projeto` ganhou `CodigoPrivado`, `HistoricoPublico` e `LinkOficial`, com um CHECK que só aceita links `https://` (migração `LinkOficialCodigoPrivado`).
+- **2026-11-19:** o utilizador de leitura deixou de ter acesso às tabelas `Utilizador` e `CodigoRecuperacao` (migração `LeituraSemConta`).
 - **2026-11-18:** as tabelas `Nota` e `ImagemNota` foram retiradas (migração `TimelineGithub`). A timeline passou a ser os commits do GitHub, e o `Projeto` ganhou a coluna `RepositorioGithub`.
 
 ## Convenções

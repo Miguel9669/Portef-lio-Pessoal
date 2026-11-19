@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Cabecalho, Rodape, TituloSecao, ligacoesDoMenu } from '@/componentes/Estrutura'
 import { SetaEsquerda } from '@/componentes/Icones'
-import { BotaoGithub, Galeria, TimelineCommits } from '@/componentes/Projeto'
+import { Galeria, LigacoesProjeto, TimelineCommits } from '@/componentes/Projeto'
 import { api, nomeSite, ouIndisponivel } from '@/lib/api'
 import { resumir } from '@/lib/texto'
 
@@ -64,11 +64,7 @@ export default async function PaginaProjeto({ params }: Props) {
           {projeto.descricao && (
             <p className="mt-6 max-w-2xl text-xl leading-relaxed whitespace-pre-line text-stone-600 dark:text-stone-300">{projeto.descricao}</p>
           )}
-          {projeto.repositorioGithub && (
-            <div className="mt-8">
-              <BotaoGithub url={projeto.repositorioGithub} />
-            </div>
-          )}
+          <LigacoesProjeto linkOficial={projeto.linkOficial} repositorioGithub={projeto.repositorioGithub} />
         </section>
         <Galeria imagens={projeto.imagens} nome={projeto.nome} />
         <TimelineCommits timeline={timeline ?? 'indisponivel'} />

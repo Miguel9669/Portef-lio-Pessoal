@@ -7,7 +7,12 @@ export type Projeto = {
   nome: string
   slug: string
   descricao: string | null
+  // Só vem se o código for público.
   repositorioGithub: string | null
+  // Site oficial do projeto (só https://, validado na API e na base de dados, SEG30).
+  linkOficial: string | null
+  // Se há timeline de commits para mostrar (o código pode ser privado e o histórico público).
+  temHistorico: boolean
   criadoEm: string
   imagens: Imagem[]
 }

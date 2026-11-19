@@ -151,11 +151,25 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
                     b.Property<DateTime>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("CodigoPrivado")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Descricao")
                         .HasColumnType("text");
+
+                    b.Property<bool>("HistoricoPublico")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LinkOficial")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -185,6 +199,8 @@ namespace Portfolio.Infrastructure.Dados.Migracoes
 
                     b.ToTable("Projeto", t =>
                         {
+                            t.HasCheckConstraint("CK_Projeto_LinkOficial", "\"LinkOficial\" ~ '^https://[A-Za-z0-9.-]+\\.[A-Za-z0-9-]+(:[0-9]{1,5})?(/\\S*)?$'");
+
                             t.HasCheckConstraint("CK_Projeto_RepositorioGithub", "\"RepositorioGithub\" ~ '^https://github\\.com/[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$'");
                         });
                 });

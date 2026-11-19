@@ -138,6 +138,31 @@ public sealed class BackofficeConteudoTests(PostgresFixture bd) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Guarda_o_link_oficial_e_a_escolha_do_codigo_privado()
+    {
+        var projeto = await CriarProjeto(new { nome = "Sério", linkOficial = "  https://MeuApp.pt/inicio  ", codigoPrivado = true, historicoPublico = true });
+        var editado = await Ler<RespostaProjeto>(await _cliente.EnviarAsync(HttpMethod.Put, $"{Projetos}/{projeto.Id}", new { nome = "Sério" }));
+
+        Assert.Equal("https://meuapp.pt/inicio", projeto.LinkOficial);
+        Assert.True(projeto.CodigoPrivado);
+        Assert.True(projeto.HistoricoPublico);
+        Assert.Null(editado.LinkOficial);
+        Assert.False(editado.CodigoPrivado);
+    }
+
+    [Theory]
+    [InlineData("http://meuapp.pt")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("https://banco.pt@evil.example")]
+    public async Task Um_link_oficial_que_nao_seja_https_e_recusado(string link)
+    {
+        var resposta = await _cliente.PostAsync(Projetos, new { nome = "X", linkOficial = link });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+        Assert.Contains("LinkOficial", (await Ler<ValidationProblemDetails>(resposta)).Errors.Keys);
+    }
+
+    [Fact]
     public async Task Edita_publica_despublica_e_remove_um_projeto()
     {
         var projeto = await CriarProjeto(new { nome = "Antigo", repositorioGithub = "https://github.com/dono/repo" });

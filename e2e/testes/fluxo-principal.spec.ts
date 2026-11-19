@@ -43,6 +43,7 @@ test('do backoffice ao site: login com 2FA, criar, publicar e ver', async ({ pag
     await page.getByLabel('Nome').fill('Projeto E2E')
     await page.getByLabel('Descrição').fill('Criado pelo teste de ponta a ponta.')
     await page.getByLabel('Repositório no GitHub (opcional)').fill('github.com/Miguel9669/Portef-lio-Pessoal')
+    await page.getByLabel('Link oficial (opcional)').fill('https://meuapp.pt')
     await page.getByRole('button', { name: 'Criar projeto' }).click()
     await expect(page.getByText('Endereço no site: /projetos/projeto-e2e')).toBeVisible()
 
@@ -77,6 +78,10 @@ test('do backoffice ao site: login com 2FA, criar, publicar e ver', async ({ pag
     await page.getByRole('link', { name: /Projeto E2E/ }).click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Projeto E2E')
     await expect(page.getByRole('link', { name: /Ver código no GitHub/ })).toHaveAttribute('href', 'https://github.com/Miguel9669/Portef-lio-Pessoal')
+    // SEG30: o site oficial abre noutro separador, sem acesso a esta página.
+    const siteOficial = page.getByRole('link', { name: /Visitar site/ })
+    await expect(siteOficial).toHaveAttribute('href', 'https://meuapp.pt/')
+    await expect(siteOficial).toHaveAttribute('rel', 'noopener noreferrer')
 
     // A imagem chega mesmo ao browser, pelo rewrite do site para a API.
     const imagem = page.getByAltText('Projeto E2E: capa.png')

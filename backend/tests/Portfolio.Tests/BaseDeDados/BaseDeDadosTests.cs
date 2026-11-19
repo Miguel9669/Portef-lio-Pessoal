@@ -155,6 +155,22 @@ public class BaseDeDadosTests(PostgresFixture bd) : IAsyncLifetime
         Assert.Equal(PostgresErrorCodes.CheckViolation, Assert.IsType<PostgresException>(erro.InnerException).SqlState);
     }
 
+    // SEG30: mesmo que a validação da aplicação falhe, o link oficial é sempre https:// e sem "@".
+    [Theory]
+    [InlineData("http://meuapp.pt/")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("https://banco.pt@evil.example/")]
+    [InlineData("https://sem-ponto/")]
+    [InlineData("https://meu app.pt/")]
+    public async Task A_base_de_dados_so_aceita_links_oficiais_https(string link)
+    {
+        await using var contexto = bd.NovoBackoffice();
+        contexto.Projetos.Add(new Projeto { Nome = "Teste", Slug = "teste", LinkOficial = link });
+
+        var erro = await Assert.ThrowsAsync<DbUpdateException>(() => contexto.SaveChangesAsync(Ct));
+        Assert.Equal(PostgresErrorCodes.CheckViolation, Assert.IsType<PostgresException>(erro.InnerException).SqlState);
+    }
+
     [Fact]
     public async Task Um_projeto_pode_nao_ter_repositorio_ou_ter_um_do_github()
     {

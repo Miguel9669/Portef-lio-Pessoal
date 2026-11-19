@@ -25,8 +25,16 @@ public interface IRepositorioPublico
 public sealed record BlocoPublico(string Titulo, string Slug, string Html);
 
 // O que o site precisa de mostrar e mais nada (sem ids internos nem datas de edição).
+// RepositorioGithub só vem se o código for público; TemHistorico diz se há timeline no site.
 public sealed record ProjetoPublico(
-    string Nome, string Slug, string? Descricao, string? RepositorioGithub, DateTime CriadoEm, IReadOnlyList<ImagemPublica> Imagens);
+    string Nome,
+    string Slug,
+    string? Descricao,
+    string? RepositorioGithub,
+    string? LinkOficial,
+    bool TemHistorico,
+    DateTime CriadoEm,
+    IReadOnlyList<ImagemPublica> Imagens);
 
 public sealed record ImagemPublica(string Url, string NomeOriginal);
 
@@ -55,7 +63,8 @@ public sealed class SitePublicoService(
         if (projeto is null)
             return NaoEncontrado();
 
-        return LinkGithub.Ler(projeto.RepositorioGithub) is { } link
+        // Repositório privado sem o histórico ligado: nem se pede ao GitHub (SEG29).
+        return projeto.MostraHistorico && LinkGithub.Ler(projeto.RepositorioGithub) is { } link
             ? await timeline.ObterAsync(link, ct)
             : Timeline.SemRepositorio;
     }
@@ -71,7 +80,7 @@ public sealed class SitePublicoService(
     }
 
     private static ProjetoPublico Converter(Projeto p) => new(
-        p.Nome, p.Slug, p.Descricao, p.RepositorioGithub, p.CriadoEm,
+        p.Nome, p.Slug, p.Descricao, p.MostraCodigo ? p.RepositorioGithub : null, p.LinkOficial, p.MostraHistorico, p.CriadoEm,
         p.Imagens.OrderBy(i => i.Ordem).Select(i => new ImagemPublica(PrefixoImagens + i.Ficheiro, i.NomeOriginal)).ToList());
 
     private static Erro NaoEncontrado() => Erro.NaoEncontrado("Projeto não encontrado.");
