@@ -1,15 +1,42 @@
 import type { Commit } from './api'
 
-const entidades: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' }
+// &lt; e &gt; passam a ‹ e ›: o texto das meta tags nunca tem < nem >.
+const entidades: Record<string, string> = { '&amp;': '&', '&lt;': '‹', '&gt;': '›', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' }
 
-// Texto simples a partir do HTML da API, para as meta tags (descrição das pré-visualizações).
+// Texto simples (por exemplo a descrição de um projeto): junta os espaços e corta no máximo.
+export function resumir(texto: string, maximo = 160): string {
+  const junto = texto.replace(/\s+/g, ' ').trim()
+  return junto.length <= maximo ? junto : `${junto.slice(0, maximo - 1).trimEnd()}…`
+}
+
+// Etiquetas que acabam um bloco de texto: no lugar delas fica um espaço entre as palavras.
+const fimDeBloco = /^(\/(p|h[1-6]|li|blockquote|pre)|br\/?)$/i
+
+// Tira as etiquetas percorrendo o texto carácter a carácter, sem expressões regulares: tudo o que
+// está entre < e > é ignorado, e um < ou > solto nunca passa para o resultado.
+function semEtiquetas(html: string): string {
+  let texto = ''
+  let etiqueta: string | null = null
+  for (const c of html) {
+    if (c === '<') {
+      etiqueta = ''
+    } else if (etiqueta !== null && c === '>') {
+      if (fimDeBloco.test(etiqueta.trim().split(/\s/)[0] ?? '')) texto += ' '
+      etiqueta = null
+    } else if (etiqueta !== null) {
+      etiqueta += c
+    } else if (c !== '>') {
+      texto += c
+    }
+  }
+  return texto
+}
+
+// Texto para as meta tags a partir do HTML dos blocos (já sanitizado pela API). Nunca tem < nem >:
+// as etiquetas saem, e as entidades só são descodificadas no fim, com &lt; e &gt; a passar a ‹ e ›.
+// As etiquetas dentro do texto (<strong>, <a>…) saem sem deixar espaço, senão "<strong>x</strong>." ficava "x .".
 export function textoSimples(html: string, maximo = 160): string {
-  const texto = html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (e) => entidades[e] ?? e)
-    .replace(/\s+/g, ' ')
-    .trim()
-  return texto.length <= maximo ? texto : `${texto.slice(0, maximo - 1).trimEnd()}…`
+  return resumir(semEtiquetas(html).replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (e) => entidades[e] ?? e), maximo)
 }
 
 const formatoMes = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric', timeZone: 'Europe/Lisbon' })

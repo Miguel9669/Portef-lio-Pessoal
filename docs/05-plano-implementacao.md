@@ -161,7 +161,7 @@ Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 - [x] Cache com regeneração a cada 60 segundos (ISR)
 - [x] `rewrite` de `/api/publico/imagens` para a API
 - [x] Cabeçalhos de segurança no site (CSP, nosniff, `frame-ancestors 'none'`), `sitemap.xml` e `robots.txt`
-- [ ] Testes do site (Vitest, cobertura mínima de 80%) e workflow no CI
+- [x] Testes do site (Vitest, cobertura mínima de 80%) e workflow no CI
 
 **Concluída quando:** o site mostra o conteúdo criado no backoffice, e o link de um projeto partilhado no LinkedIn mostra o título, a descrição e a imagem certos.
 

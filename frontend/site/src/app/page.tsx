@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Aviso, Cabecalho, Rodape, TituloSecao, ligacoesDoMenu } from '@/componentes/Estrutura'
 import { CartaoProjeto, Heroi, SecaoBloco } from '@/componentes/Inicio'
-import { REVALIDAR_SEGUNDOS, api, nomeSite, ouIndisponivel } from '@/lib/api'
+import { api, nomeSite, ouIndisponivel } from '@/lib/api'
 import { textoSimples } from '@/lib/texto'
 
 // ISR: no máximo a cada 60 segundos o servidor volta a pedir os dados à API.
-export const revalidate = REVALIDAR_SEGUNDOS
+// Tem de ser um número escrito aqui (o Next.js lê-o sem executar o código); o teste garante
+// que é igual a REVALIDAR_SEGUNDOS.
+export const revalidate = 60
 
 export async function generateMetadata(): Promise<Metadata> {
   const blocos = await ouIndisponivel(api.blocos())
