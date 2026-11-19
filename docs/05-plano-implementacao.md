@@ -154,12 +154,14 @@ Aplicação Vite + React + TypeScript + Tailwind + shadcn/ui em `frontend/backof
 
 Aplicação Next.js + TypeScript + Tailwind + shadcn/ui em `frontend/site`.
 
-- [ ] Projeto Next.js (App Router) com Tailwind e shadcn/ui; `API_URL` em variável de ambiente
-- [ ] Página inicial: blocos por ordem e lista de projetos (RF05, RF09)
-- [ ] Página do projeto: imagens e timeline de commits, com link para cada commit no GitHub (RF12); mensagens mostradas como texto (SEG29)
-- [ ] Meta tags por página (`generateMetadata`) para as pré-visualizações de links
-- [ ] Cache com regeneração a cada 60 segundos (ISR)
-- [ ] `rewrite` de `/api/publico/imagens` para a API
+- [x] Projeto Next.js (App Router) com Tailwind e shadcn/ui; `API_URL` em variável de ambiente
+- [x] Página inicial: blocos por ordem e lista de projetos (RF05, RF09)
+- [x] Página do projeto: imagens e timeline de commits, com link para cada commit no GitHub (RF12); mensagens mostradas como texto (SEG29)
+- [x] Meta tags por página (`generateMetadata`) para as pré-visualizações de links
+- [x] Cache com regeneração a cada 60 segundos (ISR)
+- [x] `rewrite` de `/api/publico/imagens` para a API
+- [x] Cabeçalhos de segurança no site (CSP, nosniff, `frame-ancestors 'none'`), `sitemap.xml` e `robots.txt`
+- [ ] Testes do site (Vitest, cobertura mínima de 80%) e workflow no CI
 
 **Concluída quando:** o site mostra o conteúdo criado no backoffice, e o link de um projeto partilhado no LinkedIn mostra o título, a descrição e a imagem certos.
 
