@@ -1,0 +1,24 @@
+# PostgreSQL só para o teste de ponta a ponta: porta 55432 (ou E2E_PORTA_BD), dados em memória (tmpfs),
+# apagado no fim. Usa o mesmo script de arranque do docker-compose principal (SEG01).
+# As passwords são fixas e só servem este contentor temporário.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: e2e-superutilizador
+      PORTFOLIO_DB: portfolio
+      PORTFOLIO_LEITURA_PASSWORD: e2e-leitura
+      PORTFOLIO_ESCRITA_PASSWORD: e2e-escrita
+      PORTFOLIO_MIGRACOES_PASSWORD: e2e-migracoes
+    ports:
+      - "127.0.0.1:${E2E_PORTA_BD:-55432}:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ../docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d portfolio"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

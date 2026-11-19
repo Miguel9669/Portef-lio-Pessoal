@@ -135,3 +135,4 @@ Todos corrigidos, com teste:
 | 7 | `textoSimples` podia deixar restos de etiquetas e recriar `<` a partir de `&lt;` (não explorável: o Next.js escapa as meta tags) | CodeQL (alerta alto); passou a percorrer o texto carácter a carácter |
 | 8 | Testes do backend a falhar por esgotar os observadores de ficheiros (inotify) | Revisão: o recarregamento da configuração fica desligado nos testes |
 | 8 | Os 4 problemas da [análise de vulnerabilidades](#análise-de-vulnerabilidades-2026-11-19) | Análise do ponto de vista de um atacante |
+| 8 | Se a pasta das imagens fosse apagada com a API a correr, todos os envios davam erro 500 até reiniciar | Teste de ponta a ponta; a pasta passou a ser garantida em cada gravação |

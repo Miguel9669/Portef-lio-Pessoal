@@ -124,6 +124,16 @@ public sealed class ArmazenamentoDiscoLocalTests : IDisposable
         Assert.Empty(Directory.GetFiles(_pasta));
     }
 
+    [Fact]
+    public async Task Volta_a_criar_a_pasta_se_tiver_sido_apagada()
+    {
+        Directory.Delete(_pasta, recursive: true);
+
+        await _armazenamento.GuardarAsync("0123456789abcdef0123456789abcdef.webp", [1], TestContext.Current.CancellationToken);
+
+        Assert.Single(Directory.GetFiles(_pasta));
+    }
+
     [Theory]
     [InlineData("../../etc/passwd")]
     [InlineData("/etc/passwd")]

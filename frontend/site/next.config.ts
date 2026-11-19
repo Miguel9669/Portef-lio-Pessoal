@@ -20,6 +20,8 @@ const csp = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // O teste de ponta a ponta usa uma pasta própria, para poder correr ao lado do servidor de desenvolvimento.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   // O next dev não escreve um AGENTS.md no repositório quando deteta um assistente de IA.
   agentRules: false,
   // O browser pede as imagens ao site, que as vai buscar à API (só de projetos públicos, SEG16).
