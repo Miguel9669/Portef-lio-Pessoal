@@ -126,3 +126,40 @@ public class ConversorMarkdigTests
         Assert.Contains("rel=\"noopener noreferrer\"", html);
     }
 }
+
+public class LinkOficialTests
+{
+    [Theory]
+    [InlineData("https://meuapp.pt", "https://meuapp.pt/")]
+    [InlineData("  https://www.meuapp.pt/produto?x=1#topo  ", "https://www.meuapp.pt/produto?x=1#topo")]
+    [InlineData("https://MeuApp.PT/", "https://meuapp.pt/")]
+    [InlineData("https://café.pt", "https://xn--caf-dma.pt/")]
+    [InlineData("https://app.meuapp.pt:8443/x", "https://app.meuapp.pt:8443/x")]
+    public void Aceita_links_https_e_devolve_a_forma_canonica(string texto, string esperado)
+    {
+        Assert.Equal(esperado, LinkOficial.Ler(texto));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("meuapp.pt")]
+    [InlineData("http://meuapp.pt")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("data:text/html,<script>alert(1)</script>")]
+    [InlineData("https://banco.pt@evil.example")]
+    [InlineData("https://user:password@meuapp.pt")]
+    [InlineData("https://localhost")]
+    [InlineData("https://intranet/")]
+    [InlineData("ftp://meuapp.pt")]
+    public void Recusa_o_que_nao_e_um_site_https(string? texto)
+    {
+        Assert.Null(LinkOficial.Ler(texto));
+    }
+
+    [Fact]
+    public void Recusa_links_compridos_demais()
+    {
+        Assert.Null(LinkOficial.Ler("https://meuapp.pt/" + new string('a', 200)));
+    }
+}

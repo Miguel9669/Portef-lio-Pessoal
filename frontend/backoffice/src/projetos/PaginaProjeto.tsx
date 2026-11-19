@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { type Control, Controller, useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 import { z } from 'zod'
 import { type Projeto, api } from '@/api/api'
 import { Button } from '@/components/ui/button'
 import { ErroCampo, Input, Label, Switch, Textarea } from '@/components/ui/campos'
 import { ConfirmarDialogo } from '@/components/ui/dialogo'
-import { aplicarErrosApi, formatoGithub } from '@/lib/formularios'
+import { aplicarErrosApi, formatoGithub, linkOficialValido } from '@/lib/formularios'
 import { ImagensProjeto } from './ImagensProjeto'
 import { TimelineProjeto } from './TimelineProjeto'
 
@@ -19,9 +19,16 @@ const esquema = z.object({
     .string()
     .trim()
     .refine((v) => v === '' || formatoGithub.test(v), 'Tem de ser o link de um repositório do GitHub, por exemplo https://github.com/dono/repositorio.'),
+  linkOficial: z
+    .string()
+    .trim()
+    .refine((v) => v === '' || linkOficialValido(v), 'Tem de ser um endereço https:// completo, por exemplo https://meuapp.pt.'),
+  codigoPrivado: z.boolean(),
+  historicoPublico: z.boolean(),
 })
 type Dados = z.infer<typeof esquema>
-const campos = ['nome', 'descricao', 'repositorioGithub'] as const
+const campos = ['nome', 'descricao', 'repositorioGithub', 'linkOficial'] as const
+const vazio: Dados = { nome: '', descricao: '', repositorioGithub: '', linkOficial: '', codigoPrivado: false, historicoPublico: false }
 
 // Criar (/projetos/novo) ou editar (/projetos/:id) um projeto (RF06–RF08, RF10, RF13).
 export function PaginaProjeto() {
@@ -49,12 +56,20 @@ function FormularioProjeto({ projeto }: { projeto?: Projeto }) {
   const navegar = useNavigate()
   const cache = useQueryClient()
   const [erro, setErro] = useState<string>()
-  const { register, handleSubmit, reset, setError, formState } = useForm<Dados>({
+  const { register, handleSubmit, reset, setError, control, formState } = useForm<Dados>({
     resolver: zodResolver(esquema),
-    defaultValues: { nome: '', descricao: '', repositorioGithub: '' },
+    defaultValues: vazio,
   })
   useEffect(() => {
-    if (projeto) reset({ nome: projeto.nome, descricao: projeto.descricao ?? '', repositorioGithub: projeto.repositorioGithub ?? '' })
+    if (projeto)
+      reset({
+        nome: projeto.nome,
+        descricao: projeto.descricao ?? '',
+        repositorioGithub: projeto.repositorioGithub ?? '',
+        linkOficial: projeto.linkOficial ?? '',
+        codigoPrivado: projeto.codigoPrivado,
+        historicoPublico: projeto.historicoPublico,
+      })
   }, [projeto, reset])
 
   const atualizar = (p: Projeto) => {
@@ -70,9 +85,16 @@ function FormularioProjeto({ projeto }: { projeto?: Projeto }) {
     },
   })
 
-  const gravar = handleSubmit(async ({ nome, descricao, repositorioGithub }) => {
+  const gravar = handleSubmit(async ({ nome, descricao, repositorioGithub, linkOficial, codigoPrivado, historicoPublico }) => {
     setErro(undefined)
-    const dados = { nome, descricao: descricao.trim() || null, repositorioGithub: repositorioGithub || null }
+    const dados = {
+      nome,
+      descricao: descricao.trim() || null,
+      repositorioGithub: repositorioGithub || null,
+      linkOficial: linkOficial || null,
+      codigoPrivado,
+      historicoPublico: codigoPrivado && historicoPublico,
+    }
     try {
       const gravado = await (projeto ? api.editarProjeto(projeto.id, dados) : api.criarProjeto(dados))
       await atualizar(gravado)
@@ -101,11 +123,49 @@ function FormularioProjeto({ projeto }: { projeto?: Projeto }) {
         <Label htmlFor="repositorioGithub">Repositório no GitHub (opcional)</Label>
         <Input id="repositorioGithub" placeholder="https://github.com/dono/repositorio" aria-invalid={!!formState.errors.repositorioGithub} aria-describedby="repositorio-erro" {...register('repositorioGithub')} />
         <ErroCampo id="repositorio-erro" mensagem={formState.errors.repositorioGithub?.message} />
-        <p className="text-xs text-zinc-500">A timeline do projeto são os commits deste repositório. Num projeto público, as mensagens dos commits ficam visíveis no site.</p>
+        <p className="text-xs text-zinc-500">A timeline do projeto são os commits deste repositório.</p>
+      </div>
+      <Privacidade control={control} />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="linkOficial">Link oficial (opcional)</Label>
+        <Input id="linkOficial" placeholder="https://meuapp.pt" aria-invalid={!!formState.errors.linkOficial} aria-describedby="link-oficial-erro" {...register('linkOficial')} />
+        <ErroCampo id="link-oficial-erro" mensagem={formState.errors.linkOficial?.message} />
+        <p className="text-xs text-zinc-500">O site do projeto. No portfólio aparece como o botão principal, "Visitar site".</p>
       </div>
       {mensagem && <p role="alert" className="text-sm text-red-600">{mensagem}</p>}
       <Acoes projeto={projeto} aGravar={formState.isSubmitting} onRemover={() => remover.mutate()} />
     </form>
+  )
+}
+
+// Código privado: o site não mostra o link do repositório; o histórico só se o dono o ligar,
+// porque as mensagens dos commits passam a ser visíveis a toda a gente (SEG29).
+function Privacidade({ control }: { control: Control<Dados> }) {
+  const privado = useWatch({ control, name: 'codigoPrivado' })
+  return (
+    <fieldset className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3">
+      <legend className="px-1 text-sm font-medium">Visibilidade do código</legend>
+      <Controller
+        name="codigoPrivado"
+        control={control}
+        render={({ field }) => (
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Código privado" />
+            Código privado: o site não mostra o link do repositório
+          </label>
+        )}
+      />
+      <Controller
+        name="historicoPublico"
+        control={control}
+        render={({ field }) => (
+          <label className={`flex items-center gap-2 text-sm ${privado ? '' : 'opacity-50'}`}>
+            <Switch checked={privado && field.value} onCheckedChange={field.onChange} disabled={!privado} aria-label="Mostrar histórico no site" />
+            Mostrar histórico no site (as mensagens dos commits ficam visíveis a toda a gente)
+          </label>
+        )}
+      />
+    </fieldset>
   )
 }
 

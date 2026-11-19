@@ -8,19 +8,27 @@ using Portfolio.Core.Projetos;
 namespace Portfolio.Api.Projetos;
 
 // RepositorioGithub: opcional; se vier, tem de ser o link de um repositório do GitHub (SEG29).
+// LinkOficial: opcional; se vier, tem de ser https:// (SEG30).
+// CodigoPrivado/HistoricoPublico: com o código privado, o site não mostra o link do repositório,
+// e a timeline só aparece se HistoricoPublico estiver ligado.
 public sealed record PedidoProjeto(
     [Required, MaxLength(150)] string Nome,
     [MaxLength(10_000)] string? Descricao,
-    [MaxLength(250)] string? RepositorioGithub);
+    [MaxLength(250)] string? RepositorioGithub,
+    [MaxLength(250)] string? LinkOficial = null,
+    bool CodigoPrivado = false,
+    bool HistoricoPublico = false);
 
 public sealed record PedidoPublicar(bool Publico);
 
 public sealed record RespostaProjeto(
-    int Id, string Nome, string Slug, string? Descricao, string? RepositorioGithub, bool Publico,
+    int Id, string Nome, string Slug, string? Descricao, string? RepositorioGithub, string? LinkOficial,
+    bool CodigoPrivado, bool HistoricoPublico, bool Publico,
     DateTime CriadoEm, DateTime AtualizadoEm, IReadOnlyList<RespostaImagem> Imagens)
 {
     public static RespostaProjeto De(Projeto p) =>
-        new(p.Id, p.Nome, p.Slug, p.Descricao, p.RepositorioGithub, p.Publico, p.CriadoEm, p.AtualizadoEm,
+        new(p.Id, p.Nome, p.Slug, p.Descricao, p.RepositorioGithub, p.LinkOficial,
+            p.CodigoPrivado, p.HistoricoPublico, p.Publico, p.CriadoEm, p.AtualizadoEm,
             p.Imagens.OrderBy(i => i.Ordem).Select(RespostaImagem.De).ToList());
 }
 
@@ -79,5 +87,6 @@ public sealed class ProjetosController(ProjetoService projetos, TimelineService 
     private ActionResult<RespostaProjeto> Responder(Resultado<Projeto> resultado) =>
         resultado.Erro is { } erro ? this.Para(erro) : RespostaProjeto.De(resultado.Valor!);
 
-    private static DadosProjeto Dados(PedidoProjeto p) => new(p.Nome, p.Descricao, p.RepositorioGithub);
+    private static DadosProjeto Dados(PedidoProjeto p) =>
+        new(p.Nome, p.Descricao, p.RepositorioGithub, p.LinkOficial, p.CodigoPrivado, p.HistoricoPublico);
 }

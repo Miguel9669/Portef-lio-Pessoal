@@ -92,6 +92,15 @@ describe('página do projeto', () => {
     await expect(PaginaProjeto(params('privado'))).rejects.toThrow('NEXT_NOT_FOUND')
   })
 
+  it('com site oficial e código privado, mostra "Visitar site" e não o GitHub', async () => {
+    falsos.projeto.mockResolvedValue(projeto({ linkOficial: 'https://meuapp.pt/', repositorioGithub: null }))
+
+    render(await PaginaProjeto(params('portfolio-pessoal')))
+
+    expect(screen.getByRole('link', { name: /Visitar site/ })).toHaveAttribute('href', 'https://meuapp.pt/')
+    expect(screen.queryByRole('link', { name: /Ver código no GitHub/ })).toBeNull()
+  })
+
   it('sem repositório nem timeline, mostra só o resto', async () => {
     falsos.projeto.mockResolvedValue(projeto({ repositorioGithub: null, descricao: null }))
     falsos.timeline.mockRejectedValue(new ApiIndisponivel('x'))

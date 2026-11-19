@@ -22,10 +22,20 @@ export type Projeto = {
   slug: string
   descricao: string | null
   repositorioGithub: string | null
+  linkOficial: string | null
+  codigoPrivado: boolean
+  historicoPublico: boolean
   publico: boolean
   imagens: Imagem[]
 }
-export type DadosProjeto = { nome: string; descricao: string | null; repositorioGithub: string | null }
+export type DadosProjeto = {
+  nome: string
+  descricao: string | null
+  repositorioGithub: string | null
+  linkOficial: string | null
+  codigoPrivado: boolean
+  historicoPublico: boolean
+}
 
 export type EstadoTimeline = 'atual' | 'desatualizada' | 'indisponivel' | 'repositorioNaoEncontrado' | 'semRepositorio'
 export type Commit = { sha: string; mensagem: string; autor: string; data: string; url: string }

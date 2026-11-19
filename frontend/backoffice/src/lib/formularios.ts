@@ -13,3 +13,14 @@ export function aplicarErrosApi<T extends FieldValues>(erro: unknown, campos: re
 // O mesmo formato que a API aceita (LinkGithub): só serve para avisar mais cedo;
 // quem decide é a API, e a base de dados tem um CHECK (SEG29).
 export const formatoGithub = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}\/?$/i
+
+// Link oficial do projeto (SEG30): só https://, sem utilizador no endereço e com um domínio a sério.
+// Como o do GitHub, só serve para avisar mais cedo; quem decide é a API.
+export function linkOficialValido(texto: string): boolean {
+  try {
+    const url = new URL(texto)
+    return url.protocol === 'https:' && url.username === '' && url.password === '' && /^[^.]+(\.[^.]+)+$/.test(url.hostname)
+  } catch {
+    return false
+  }
+}

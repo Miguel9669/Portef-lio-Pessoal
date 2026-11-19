@@ -17,12 +17,19 @@ public interface IRepositorioProjetos
     Task GravarAsync(CancellationToken ct);
 }
 
-public sealed record DadosProjeto(string Nome, string? Descricao, string? RepositorioGithub);
+public sealed record DadosProjeto(
+    string Nome,
+    string? Descricao,
+    string? RepositorioGithub,
+    string? LinkOficial = null,
+    bool CodigoPrivado = false,
+    bool HistoricoPublico = false);
 
 // Projetos no backoffice (RF06–RF08, RF10).
 public sealed class ProjetoService(IRepositorioProjetos projetos, IArmazenamentoImagens armazenamento)
 {
     private const string LinkInvalido = "Tem de ser o link de um repositório do GitHub, por exemplo https://github.com/dono/repositorio.";
+    private const string LinkOficialInvalido = "Tem de ser um endereço https:// completo, por exemplo https://meuapp.pt.";
 
     public Task<List<Projeto>> ListarAsync(CancellationToken ct) => projetos.ListarAsync(ct);
 
@@ -33,17 +40,16 @@ public sealed class ProjetoService(IRepositorioProjetos projetos, IArmazenamento
     // mesmo que o nome do projeto mude.
     public async Task<Resultado<Projeto>> CriarAsync(DadosProjeto dados, CancellationToken ct)
     {
-        if (!TentarLerLink(dados.RepositorioGithub, out var link))
-            return Erro.Invalido(nameof(DadosProjeto.RepositorioGithub), LinkInvalido);
+        if (Validar(dados) is { } erro)
+            return erro;
 
         var slug = Slug.Gerar(dados.Nome, "projeto");
         var projeto = new Projeto
         {
             Nome = dados.Nome.Trim(),
             Slug = Slug.Unico(slug, await projetos.SlugsComecadosPorAsync(slug, ct)),
-            Descricao = TextoOuNulo(dados.Descricao),
-            RepositorioGithub = link?.Url,
         };
+        Aplicar(projeto, dados);
         projetos.Adicionar(projeto);
         await projetos.GravarAsync(ct);
         return projeto;
@@ -54,12 +60,10 @@ public sealed class ProjetoService(IRepositorioProjetos projetos, IArmazenamento
         var projeto = await projetos.ObterAsync(id, ct);
         if (projeto is null)
             return NaoEncontrado();
-        if (!TentarLerLink(dados.RepositorioGithub, out var link))
-            return Erro.Invalido(nameof(DadosProjeto.RepositorioGithub), LinkInvalido);
+        if (Validar(dados) is { } erro)
+            return erro;
 
-        projeto.Nome = dados.Nome.Trim();
-        projeto.Descricao = TextoOuNulo(dados.Descricao);
-        projeto.RepositorioGithub = link?.Url;
+        Aplicar(projeto, dados);
         await projetos.GravarAsync(ct);
         return projeto;
     }
@@ -91,11 +95,24 @@ public sealed class ProjetoService(IRepositorioProjetos projetos, IArmazenamento
         return null;
     }
 
-    // Sem link é válido (o projeto fica sem timeline); com link, tem de ser do GitHub.
-    private static bool TentarLerLink(string? texto, out LinkGithub? link)
+    // Os dois links são opcionais; se vierem, têm de ser válidos.
+    private static Erro? Validar(DadosProjeto dados)
     {
-        link = LinkGithub.Ler(texto);
-        return link is not null || string.IsNullOrWhiteSpace(texto);
+        if (!string.IsNullOrWhiteSpace(dados.RepositorioGithub) && LinkGithub.Ler(dados.RepositorioGithub) is null)
+            return Erro.Invalido(nameof(DadosProjeto.RepositorioGithub), LinkInvalido);
+        if (!string.IsNullOrWhiteSpace(dados.LinkOficial) && Projetos.LinkOficial.Ler(dados.LinkOficial) is null)
+            return Erro.Invalido(nameof(DadosProjeto.LinkOficial), LinkOficialInvalido);
+        return null;
+    }
+
+    private static void Aplicar(Projeto projeto, DadosProjeto dados)
+    {
+        projeto.Nome = dados.Nome.Trim();
+        projeto.Descricao = TextoOuNulo(dados.Descricao);
+        projeto.RepositorioGithub = LinkGithub.Ler(dados.RepositorioGithub)?.Url;
+        projeto.LinkOficial = Projetos.LinkOficial.Ler(dados.LinkOficial);
+        projeto.CodigoPrivado = dados.CodigoPrivado;
+        projeto.HistoricoPublico = dados.HistoricoPublico;
     }
 
     private static string? TextoOuNulo(string? texto) => string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();

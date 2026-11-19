@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Bloco, Projeto } from '@/lib/api'
 import { HtmlDaApi } from './HtmlDaApi'
+import { dominio } from './Projeto'
 import { SetaCanto, SetaDireita } from './Icones'
 import { TituloSecao } from './Estrutura'
 
@@ -67,9 +68,10 @@ export function CartaoProjeto({ projeto }: { projeto: Projeto }) {
             <SetaCanto className="mt-1 size-5 shrink-0 text-stone-400 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-violet-600" />
           </h3>
           {projeto.descricao && <p className="line-clamp-3 text-stone-600 dark:text-stone-400">{projeto.descricao}</p>}
-          {projeto.repositorioGithub && (
-            <p className="mt-auto pt-3 text-xs font-medium tracking-wide text-violet-700 uppercase dark:text-violet-300">Com timeline do GitHub</p>
-          )}
+          <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 pt-3 text-xs font-medium tracking-wide uppercase">
+            {projeto.linkOficial && <span className="text-stone-500 dark:text-stone-400">{dominio(projeto.linkOficial)}</span>}
+            {projeto.temHistorico && <span className="text-violet-700 dark:text-violet-300">Com timeline do GitHub</span>}
+          </div>
         </div>
       </Link>
     </li>

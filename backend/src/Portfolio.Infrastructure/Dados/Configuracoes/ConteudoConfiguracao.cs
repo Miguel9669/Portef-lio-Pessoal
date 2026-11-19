@@ -31,8 +31,19 @@ public class ProjetoConfiguracao : IEntityTypeConfiguration<Projeto>
 
         // SEG29: só links de repositórios do GitHub, também na base de dados.
         // Os nomes seguem as regras do GitHub (dono até 39 caracteres, repositório até 100).
-        e.ToTable(t => t.HasCheckConstraint("CK_Projeto_RepositorioGithub",
-            "\"RepositorioGithub\" ~ '^https://github\\.com/[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$'"));
+        e.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Projeto_RepositorioGithub",
+                "\"RepositorioGithub\" ~ '^https://github\\.com/[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$'");
+            // SEG30: só https://, sem utilizador no endereço (sem "@" antes do domínio), sem espaços.
+            t.HasCheckConstraint("CK_Projeto_LinkOficial",
+                "\"LinkOficial\" ~ '^https://[A-Za-z0-9.-]+\\.[A-Za-z0-9-]+(:[0-9]{1,5})?(/\\S*)?$'");
+        });
+        e.Property(p => p.LinkOficial).HasMaxLength(Portfolio.Core.Projetos.LinkOficial.TamanhoMaximo);
+        e.Property(p => p.CodigoPrivado).HasDefaultValue(false);
+        e.Property(p => p.HistoricoPublico).HasDefaultValue(false);
+        e.Ignore(p => p.MostraCodigo);
+        e.Ignore(p => p.MostraHistorico);
 
         // Apagar um projeto apaga as imagens (RF07).
         e.HasMany(p => p.Imagens)

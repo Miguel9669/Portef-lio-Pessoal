@@ -1,10 +1,13 @@
 import path from 'node:path'
 
-// Endereços e credenciais do ambiente de ponta a ponta. Portas diferentes das de
-// desenvolvimento (7003, 5173, 3000, 5432), para os dois poderem correr ao mesmo tempo.
-export const API = 'https://localhost:7103'
-export const BACKOFFICE = 'http://localhost:5273'
-export const SITE = 'http://localhost:3100'
+// Endereços e credenciais do ambiente de ponta a ponta. Portas pouco usadas (e configuráveis),
+// diferentes das de desenvolvimento, para poderem correr ao lado deste e de outros projetos.
+export const PORTA_API = process.env.E2E_PORTA_API ?? '57103'
+export const PORTA_BACKOFFICE = process.env.E2E_PORTA_BACKOFFICE ?? '55273'
+export const PORTA_SITE = process.env.E2E_PORTA_SITE ?? '53100'
+export const API = `https://localhost:${PORTA_API}`
+export const BACKOFFICE = `http://localhost:${PORTA_BACKOFFICE}`
+export const SITE = `http://localhost:${PORTA_SITE}`
 
 export const CONTA = { nome: 'Teste E2E', email: 'e2e@portfolio.test', password: 'password-de-teste-e2e' }
 

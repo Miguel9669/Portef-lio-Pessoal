@@ -30,9 +30,9 @@ São 13 requisitos, em quatro áreas. A coluna Ator indica quem executa a ação
 | RF07 | Projetos | Remover um projeto, incluindo as suas imagens. | Administrador |
 | RF08 | Projetos | Publicar ou despublicar um projeto. Um projeto despublicado sai do site mas continua no backoffice. | Administrador |
 | RF09 | Projetos | Listar projetos: todos no backoffice, só os publicados no site. | Administrador, Visitante |
-| RF10 | Timeline | Associar a um projeto o link do seu repositório no GitHub (opcional). | Administrador |
+| RF10 | Timeline | Associar a um projeto o link do seu repositório no GitHub (opcional), dizer se o código é privado, e o link do site oficial do projeto (opcional). | Administrador |
 | RF11 | Timeline | A timeline de um projeto são os commits desse repositório, do mais recente para o mais antigo, lidos do GitHub. Sem link, o projeto não tem timeline. | Sistema |
-| RF12 | Timeline | Percorrer a timeline (mensagem, autor e data de cada commit) e clicar num commit para o abrir no GitHub. No site, só a timeline dos projetos públicos. | Administrador, Visitante |
+| RF12 | Timeline | Percorrer a timeline (mensagem, autor e data de cada commit) e clicar num commit para o abrir no GitHub. No site, só a timeline dos projetos públicos; num repositório privado, só se o administrador o permitir. O visitante abre o site oficial do projeto com o botão "Visitar site". | Administrador, Visitante |
 | RF13 | Imagens | Validar as imagens enviadas: só tipos de imagem permitidos e até um tamanho máximo. | Sistema |
 
 ## Requisitos não funcionais

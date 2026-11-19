@@ -184,7 +184,7 @@ Os workflows estão em `.github/workflows/` e correm em cada pull request e em c
 
 ### Teste de ponta a ponta
 
-O fluxo principal num browser real, com tudo a correr: um PostgreSQL próprio (porta 55432, ou `E2E_PORTA_BD`, apagado no fim), a API (7103), o backoffice (5273) e o site (3100). Não mexe na base de dados nem na conta de desenvolvimento, e pode correr ao lado dos servidores de desenvolvimento.
+O fluxo principal num browser real, com tudo a correr: um PostgreSQL próprio (apagado no fim), a API, o backoffice e o site, em portas pouco usadas (55432, 57103, 55273 e 53100; mudam-se com `E2E_PORTA_BD`, `E2E_PORTA_API`, `E2E_PORTA_BACKOFFICE` e `E2E_PORTA_SITE`). Não mexe na base de dados nem na conta de desenvolvimento, e pode correr ao lado dos servidores de desenvolvimento.
 
 ```bash
 cd e2e

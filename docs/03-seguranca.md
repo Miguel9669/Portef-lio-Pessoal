@@ -89,7 +89,14 @@ Cada medida tem um ID (SEG01…) para ser referida nos componentes e no código.
   - **Os commits são texto, não HTML.** As mensagens e os nomes dos autores vêm de fora e podem conter `<script>`: a API devolve-os como texto simples e os frontends mostram-nos como texto, nunca como HTML nem como Markdown.
   - **Cache e limites.** Sem token, o GitHub aceita 60 pedidos por hora por IP. A API guarda os commits de cada repositório em cache durante 10 minutos, com tempo limite de 10 segundos por pedido. Se o GitHub falhar, mostra a última versão em cache; se não houver, a timeline aparece como indisponível, sem derrubar a página do projeto.
   - **Token opcional e só de leitura.** Um token do GitHub (`Github:Token`, em user-secrets ou variável de ambiente, SEG25) sobe o limite para 5000 pedidos por hora. Deve ser um *fine-grained token* só com leitura de conteúdos.
-  - **Repositórios privados.** Com um token com acesso a repositórios privados, a API consegue ler os seus commits, e um projeto público passa a mostrar as mensagens desses commits a toda a gente. Por isso, só se associa a um projeto público um repositório cujas mensagens de commit possam ser públicas.
+  - **Repositórios privados.** Cada projeto diz se o código é privado (`CodigoPrivado`). Nesse caso, o site não recebe o link do repositório e a API nem pede os commits ao GitHub para o site, a menos que o administrador ligue "Mostrar histórico no site" (`HistoricoPublico`), sabendo que as mensagens dos commits passam a ser visíveis a toda a gente. No backoffice os commits continuam visíveis (com um token com acesso ao repositório).
+
+- **SEG30 — Link oficial do projeto.** O botão "Visitar site" abre o site do produto, um link que vem do backoffice e é mostrado a todos os visitantes.
+  - **Só `https://`.** Validado na API (`LinkOficial`) e na base de dados (CHECK): nada de `javascript:`, `data:` nem `http://` sem cifra, que deixariam correr código ou expor o visitante.
+  - **Sem utilizador no endereço.** `https://banco.pt@evil.example` parece ir para `banco.pt` e vai para `evil.example`; é recusado.
+  - **Domínio em ASCII.** Os domínios com acentos são guardados em punycode (`café.pt` passa a `xn--caf-dma.pt`).
+  - **Abre noutro separador com `rel="noopener noreferrer"`:** o site do projeto não ganha acesso à página do portfólio nem fica a saber de onde veio o visitante.
+  - **A API nunca visita o link,** por isso não pode ser usada para fazer pedidos a outros servidores.
 
 ### Infraestrutura
 

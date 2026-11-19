@@ -11,6 +11,8 @@ export const projeto = (dados: Partial<Projeto> = {}): Projeto => ({
   slug: 'portfolio-pessoal',
   descricao: 'Um portfólio com backoffice e 2FA.',
   repositorioGithub: 'https://github.com/dono/repo',
+  linkOficial: null,
+  temHistorico: true,
   criadoEm: '2026-11-18T10:00:00Z',
   imagens: [
     { url: '/api/publico/imagens/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png', nomeOriginal: 'inicio.png' },
