@@ -15,12 +15,17 @@ describe('textoSimples', () => {
     '&lt;script&gt;alert(1)&lt;/script&gt;',
     '&amp;lt;script&amp;gt;',
     '<img src=x onerror=alert(1)',
+    'texto > solto e < outro',
   ])('não deixa restos de etiquetas: %s', (html) => {
     expect(textoSimples(html)).not.toMatch(/[<>]/)
   })
 
   it('não deixa espaços antes da pontuação a seguir a uma etiqueta', () => {
     expect(textoSimples('<p>Sou <strong>full-stack</strong>. Ver <a href="x">site</a>!</p><ul><li>um</li><li>dois</li></ul>')).toBe('Sou full-stack. Ver site! um dois')
+  })
+
+  it('separa as palavras no fim de parágrafos, títulos, itens e quebras de linha', () => {
+    expect(textoSimples('<h2>Título</h2><p>Um<br>dois<br/>três</p><ul><li>a</li><li>b</li></ul>')).toBe('Título Um dois três a b')
   })
 
   it('corta no máximo com reticências', () => {
